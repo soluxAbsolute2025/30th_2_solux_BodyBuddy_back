@@ -6,6 +6,8 @@ import com.solux.bodybubby.domain.post.entity.Post;
 import com.solux.bodybubby.domain.post.repository.PostRepository;
 import com.solux.bodybubby.domain.user.entity.User;
 import com.solux.bodybubby.domain.user.repository.UserRepositoryTemp;
+import com.solux.bodybubby.global.exception.BusinessException;
+import com.solux.bodybubby.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -50,7 +52,7 @@ public class PostService {
     @Transactional
     public PostResponseDto getPost(Long postId) {
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND));
 
         // 조회수 증가 로직 필요
 
@@ -61,11 +63,11 @@ public class PostService {
     @Transactional
     public void updatePost(Long postId, PostRequestDto dto) {
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND));
 
         // 유저 체크 로직 수정 필요
         if(!post.getId().equals(1L)) {
-            throw new IllegalArgumentException("수정 권한이 없습니다.");
+            throw new BusinessException(ErrorCode.UPDATE_PERMISSION_DENIED);
         }
 
         post.update(dto.getTitle(), dto.getContent(), dto.getVisibility());
@@ -75,11 +77,11 @@ public class PostService {
     @Transactional
     public void deletePost(Long postId) {
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND));
 
         // 유저 체크 로직 수정 필요
         if(!post.getId().equals(1L)) {
-            throw new IllegalArgumentException("삭제 권한이 없습니다.");
+            throw new BusinessException(ErrorCode.DELETE_PERMISSION_DENIED);
         }
 
         postRepository.delete(post);
