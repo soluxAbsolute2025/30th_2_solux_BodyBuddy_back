@@ -12,6 +12,11 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @Query("SELECT p FROM Post p " +
             "JOIN p.postHashtags ph " +
             "JOIN ph.hashtag h " +
-            "WHERE h.tagName = :tagName AND p.deletedAt IS NULL")
-    Page<Post> findAllByHashtagName(@Param("tagName") String tagName, Pageable pageable);
+            "WHERE h.tagName = :tagName " +
+            "AND p.deletedAt IS NULL " +
+            "AND (p.visibility = 'PUBLIC' OR p.user.id = :currentUserId)")
+    Page<Post> findAllByHashtagName(
+            @Param("tagName") String tagName,
+            @Param("currentUserId") Long currentUserId,
+            Pageable pageable);
 }

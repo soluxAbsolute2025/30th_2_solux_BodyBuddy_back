@@ -144,8 +144,8 @@ public class PostService {
 
     // 해시태그로 필터링 조회
     @Transactional(readOnly = true)
-    public Page<PostResponseDto> getPostsByHashtag(String tagName, Pageable pageable) {
-        Page<Post> posts = postRepository.findAllByHashtagName(tagName, pageable);
+    public Page<PostResponseDto> getPostsByHashtag(String tagName, Long currentUserId, Pageable pageable) {
+        Page<Post> posts = postRepository.findAllByHashtagName(tagName, currentUserId, pageable);
 
         return posts.map(PostResponseDto::fromEntity);
     }

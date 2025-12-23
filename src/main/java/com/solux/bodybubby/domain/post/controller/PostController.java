@@ -52,9 +52,10 @@ public class PostController {
     @GetMapping("/hashtag")
     public ResponseEntity<Page<PostResponseDto>> getPostsByHashtag(
             @RequestParam String tagName,
+            Long userId,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
-        Page<PostResponseDto> responses = postService.getPostsByHashtag(tagName, pageable);
+        Page<PostResponseDto> responses = postService.getPostsByHashtag(tagName, userId, pageable);
         return ResponseEntity.ok(responses);
     }
 }
