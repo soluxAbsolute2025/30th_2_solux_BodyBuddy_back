@@ -2,7 +2,11 @@ package com.solux.bodybubby.domain.post.service;
 
 import com.solux.bodybubby.domain.post.dto.request.PostRequestDto;
 import com.solux.bodybubby.domain.post.dto.response.PostResponseDto;
+import com.solux.bodybubby.domain.post.entity.Hashtag;
 import com.solux.bodybubby.domain.post.entity.Post;
+import com.solux.bodybubby.domain.post.entity.PostHashtag;
+import com.solux.bodybubby.domain.post.repository.HashtagRepository;
+import com.solux.bodybubby.domain.post.repository.PostHashtagRepository;
 import com.solux.bodybubby.domain.post.repository.PostRepository;
 import com.solux.bodybubby.domain.user.entity.User;
 import com.solux.bodybubby.domain.user.repository.UserRepositoryTemp;
@@ -14,6 +18,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -21,6 +27,8 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final UserRepositoryTemp userRepository; // 임시 레포. 추후 변경 예정
+    private final PostHashtagRepository postHashtagRepository;
+    private final HashtagRepository hashtagRepository;
 
     // 게시글 생성
     @Transactional
@@ -38,10 +46,33 @@ public class PostService {
                 .likeCount(0)
                 .build();
 
-        return postRepository.save(post).getId();
+        postRepository.save(post);
+
+        if (dto.getHashtags() != null) {
+            savePostHashtags(post, dto.getHashtags());
+        }
+        
+        return post.getId();
+    }
+
+    private void savePostHashtags(Post post, List<String> tagNames) {
+        for (String tagName : tagNames) {
+            Hashtag hashtag = hashtagRepository.findByTagName(tagName)
+                    .orElseGet(() -> hashtagRepository.save(
+                            Hashtag.builder().tagName(tagName).build()
+                    ));
+
+            postHashtagRepository.save(
+                    PostHashtag.builder()
+                            .post(post)
+                            .hashtag(hashtag)
+                            .build()
+            );
+        }
     }
 
     // 게시글 전체 조회
+    @Transactional
     public Page<PostResponseDto> getAllPosts(Pageable pageable) {
         Page<Post> posts = postRepository.findAll(pageable);
 
@@ -61,7 +92,7 @@ public class PostService {
 
     // 게시글 수정
     @Transactional
-    public void updatePost(Long postId, PostRequestDto dto) {
+    public Long updatePost(Long postId, PostRequestDto dto) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND));
 
@@ -71,6 +102,30 @@ public class PostService {
         }
 
         post.update(dto.getTitle(), dto.getContent(), dto.getVisibility());
+
+        updatePostHashtags(post, dto.getHashtags());
+
+        return post.getId();
+    }
+
+    private void updatePostHashtags(Post post, List<String> tagNames) {
+        postHashtagRepository.deleteByPostId(post.getId());
+
+        if (tagNames == null || tagNames.isEmpty()) return;
+
+        for (String name : tagNames) {
+            Hashtag hashtag = hashtagRepository.findByTagName(name)
+                    .orElseGet(() -> hashtagRepository.save(
+                            Hashtag.builder().tagName(name).build()
+                    ));
+
+            postHashtagRepository.save(
+                    PostHashtag.builder()
+                            .post(post)
+                            .hashtag(hashtag)
+                            .build()
+            );
+        }
     }
 
     // 게시글 삭제(soft delete)
