@@ -142,6 +142,12 @@ public class PostService {
         postRepository.delete(post);
     }
 
+    // 해시태그로 필터링 조회
+    @Transactional(readOnly = true)
+    public Page<PostResponseDto> getPostsByHashtag(String tagName, Pageable pageable) {
+        Page<Post> posts = postRepository.findAllByHashtagName(tagName, pageable);
 
+        return posts.map(PostResponseDto::fromEntity);
+    }
 
 }

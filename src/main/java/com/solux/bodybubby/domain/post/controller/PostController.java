@@ -24,7 +24,6 @@ public class PostController {
         return ResponseEntity.ok(postService.createPost(dto));
     }
 
-    // 피드 전체 조회 추가 필요
     @GetMapping
     public ResponseEntity<Page<PostResponseDto>> getAllPosts(
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
@@ -48,5 +47,14 @@ public class PostController {
     public ResponseEntity<Void> deletePost(@PathVariable Long postId) {
         postService.deletePost(postId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/hashtag")
+    public ResponseEntity<Page<PostResponseDto>> getPostsByHashtag(
+            @RequestParam String tagName,
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+
+        Page<PostResponseDto> responses = postService.getPostsByHashtag(tagName, pageable);
+        return ResponseEntity.ok(responses);
     }
 }
