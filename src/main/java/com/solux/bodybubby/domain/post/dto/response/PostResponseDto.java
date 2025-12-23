@@ -28,6 +28,7 @@ public class PostResponseDto {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<String> hashtags;
+    private List<CommentResponseDto> comments;
     // 이미지 관련 추가 필요
 
     public static PostResponseDto fromEntity(Post post) {
@@ -48,6 +49,9 @@ public class PostResponseDto {
                 // 생성 시간과 수정 시간이 다르면 (수정됨)으로 판단 (1초 미만 오차 허용)
                 .isEdited(post.getUpdatedAt().isAfter(post.getCreatedAt().plusSeconds(1)))
                 .hashtags(hashtags)
+                .comments(post.getComments().stream()
+                        .map(CommentResponseDto::fromEntity)
+                        .collect(Collectors.toList()))
                 .build();
     }
 

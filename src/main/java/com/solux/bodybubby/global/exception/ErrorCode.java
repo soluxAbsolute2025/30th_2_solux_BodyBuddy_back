@@ -20,7 +20,8 @@ public enum ErrorCode {
     POST_NOT_FOUND(HttpStatus.NOT_FOUND, "P001", "존재하지 않는 게시글입니다."),
     UPDATE_PERMISSION_DENIED(HttpStatus.FORBIDDEN, "P002", "수정 권한이 없습니다."),
     DELETE_PERMISSION_DENIED(HttpStatus.FORBIDDEN, "P003", "삭제 권한이 없습니다."),
-    IMAGE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "P002", "이미지 업로드에 실패했습니다.");
+    IMAGE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "P101", "이미지 업로드에 실패했습니다."),
+    COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "P201", "존재하지 않는 댓글입니다.");
 
     private final HttpStatus status;
     private final String code;
