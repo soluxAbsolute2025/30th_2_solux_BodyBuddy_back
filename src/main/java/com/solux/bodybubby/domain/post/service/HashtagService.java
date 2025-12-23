@@ -3,6 +3,7 @@ package com.solux.bodybubby.domain.post.service;
 import com.solux.bodybubby.domain.post.entity.Hashtag;
 import com.solux.bodybubby.domain.post.repository.HashtagRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +19,7 @@ public class HashtagService {
     private final HashtagRepository hashtagRepository;
 
     // 태그 이름 리스트를 받아 Hashtag 엔티티 리스트로 변환 (없으면 생성)
+    @Transactional
     public List<Hashtag> findOrCreateHashtags(List<String> tagNames) {
         if (tagNames == null || tagNames.isEmpty()) {
             return Collections.emptyList();
@@ -33,5 +35,10 @@ public class HashtagService {
                 .orElseGet(() -> hashtagRepository.save(
                         Hashtag.builder().tagName(tagName).build()
                 ));
+    }
+
+    @Transactional
+    public List<String> getPopularTags() {
+        return hashtagRepository.findTop5PopularTags(PageRequest.of(0, 5));
     }
 }
