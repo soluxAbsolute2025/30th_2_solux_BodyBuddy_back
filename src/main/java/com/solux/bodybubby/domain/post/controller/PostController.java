@@ -20,32 +20,42 @@ public class PostController {
     private  final PostService postService;
 
     @PostMapping
-    public ResponseEntity<Long> createPost(@RequestBody PostRequestDto dto) {
-        return ResponseEntity.ok(postService.createPost(dto));
+    public ResponseEntity<Long> createPost(
+            @RequestBody PostRequestDto dto,
+            @RequestHeader(value = "userId", defaultValue = "1") Long currentUserId) {
+        return ResponseEntity.ok(postService.createPost(dto, currentUserId));
     }
 
     @GetMapping
     public ResponseEntity<Page<PostResponseDto>> getAllPosts(
+            @RequestHeader(value = "userId", defaultValue = "1") Long currentUserId,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
-        Page<PostResponseDto> responses = postService.getAllPosts(pageable);
+        Page<PostResponseDto> responses = postService.getAllPosts(currentUserId, pageable);
         return ResponseEntity.ok(responses);
     }
 
     @GetMapping("/{postId}")
-    public ResponseEntity<PostResponseDto> getOnePost(@PathVariable Long postId) {
-        return ResponseEntity.ok(postService.getPost(postId));
+    public ResponseEntity<PostResponseDto> getOnePost(
+            @PathVariable Long postId,
+            @RequestHeader(value = "userId", defaultValue = "1") Long currentUserId) {
+        return ResponseEntity.ok(postService.getPost(postId, currentUserId));
     }
 
     @PatchMapping("/{postId}")
-    public ResponseEntity<Void> updatePost(@PathVariable Long postId, @RequestBody PostRequestDto dto) {
-        postService.updatePost(postId, dto);
+    public ResponseEntity<Void> updatePost(
+            @PathVariable Long postId,
+            @RequestBody PostRequestDto dto,
+            @RequestHeader(value = "userId", defaultValue = "1") Long currentUserId) {
+        postService.updatePost(postId, dto, currentUserId);
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{postId}")
-    public ResponseEntity<Void> deletePost(@PathVariable Long postId) {
-        postService.deletePost(postId);
+    public ResponseEntity<Void> deletePost(
+            @PathVariable Long postId,
+            @RequestHeader(value = "userId", defaultValue = "1") Long currentUserId) {
+        postService.deletePost(postId, currentUserId);
         return ResponseEntity.noContent().build();
     }
 

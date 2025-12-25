@@ -7,6 +7,7 @@ import com.solux.bodybubby.domain.post.entity.Post;
 import com.solux.bodybubby.domain.post.entity.PostHashtag;
 import com.solux.bodybubby.domain.post.repository.HashtagRepository;
 import com.solux.bodybubby.domain.post.repository.PostHashtagRepository;
+import com.solux.bodybubby.domain.post.repository.PostLikeRepository;
 import com.solux.bodybubby.domain.post.repository.PostRepository;
 import com.solux.bodybubby.domain.user.entity.User;
 import com.solux.bodybubby.domain.user.repository.UserRepositoryTemp;
@@ -29,16 +30,20 @@ public class PostService {
     private final UserRepositoryTemp userRepository; // 임시 레포. 추후 변경 예정
     private final PostHashtagRepository postHashtagRepository;
     private final HashtagRepository hashtagRepository;
+    private final PostLikeRepository postLikeRepository;
 
     // 게시글 생성
     @Transactional
-    public Long createPost(PostRequestDto dto) {
+    public Long createPost(PostRequestDto dto, Long currentUserId) {
         // 임시로 1번 유저를 작성자로 지정
-        User tempUser = userRepository.findById(1L)
+        User user = userRepository.findById(1L)
                 .orElseThrow(() -> new IllegalArgumentException("테스트용 유저(ID:1)가 DB에 없습니다."));
 
+//        User user = userRepository.findById(currentUserId)
+//                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
         Post post = Post.builder()
-                .user(tempUser)
+                .user(user)
                 .title(dto.getTitle())
                 .content(dto.getContent())
                 .visibility(dto.getVisibility())
@@ -73,30 +78,39 @@ public class PostService {
 
     // 게시글 전체 조회
     @Transactional
-    public Page<PostResponseDto> getAllPosts(Pageable pageable) {
+    public Page<PostResponseDto> getAllPosts(Long currentUserId, Pageable pageable) {
         Page<Post> posts = postRepository.findAll(pageable);
 
-        return posts.map(PostResponseDto::fromEntity);
+        return posts.map(post -> {
+            boolean isLiked = postLikeRepository.existsByPostAndUser(
+                    post, userRepository.getReferenceById(currentUserId)
+            );
+            return PostResponseDto.fromEntity(post, isLiked);
+        });
     }
 
     // 게시글 상세 조회
     @Transactional
-    public PostResponseDto getPost(Long postId) {
+    public PostResponseDto getPost(Long postId, Long currentUserId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND));
 
         // 조회수 증가 로직 필요
 
-        return PostResponseDto.fromEntity(post);
+        boolean isLiked = postLikeRepository.existsByPostAndUser(post,
+                userRepository.getReferenceById(currentUserId));
+
+        return PostResponseDto.fromEntity(post, isLiked);
     }
 
     // 게시글 수정
     @Transactional
-    public Long updatePost(Long postId, PostRequestDto dto) {
+    public Long updatePost(Long postId, PostRequestDto dto, Long currentUserId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND));
 
         // 유저 체크 로직 수정 필요
+//        if(!post.getUser().getId().equals(currentUserId)) {
         if(!post.getId().equals(1L)) {
             throw new BusinessException(ErrorCode.UPDATE_PERMISSION_DENIED);
         }
@@ -130,11 +144,12 @@ public class PostService {
 
     // 게시글 삭제(soft delete)
     @Transactional
-    public void deletePost(Long postId) {
+    public void deletePost(Long postId, Long currentUserId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND));
 
         // 유저 체크 로직 수정 필요
+//        if(!post.getUser().getId().equals(currentUserId)) {
         if(!post.getId().equals(1L)) {
             throw new BusinessException(ErrorCode.DELETE_PERMISSION_DENIED);
         }
@@ -147,7 +162,11 @@ public class PostService {
     public Page<PostResponseDto> getPostsByHashtag(String tagName, Long currentUserId, Pageable pageable) {
         Page<Post> posts = postRepository.findAllByHashtagName(tagName, currentUserId, pageable);
 
-        return posts.map(PostResponseDto::fromEntity);
+        return posts.map(post -> {
+            boolean isLiked = postLikeRepository.existsByPostAndUser(post,
+                    userRepository.getReferenceById(currentUserId));
+            return PostResponseDto.fromEntity(post, isLiked);
+        });
     }
 
 }

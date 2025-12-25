@@ -23,6 +23,7 @@ public class PostResponseDto {
     private String writerNickname;
     private Integer viewCount;
     private Integer likeCount;
+    private boolean isLiked;
     private Visibility visibility;
     private boolean isEdited; // 수정 여부
     private LocalDateTime createdAt;
@@ -31,7 +32,7 @@ public class PostResponseDto {
     private List<CommentResponseDto> comments;
     // 이미지 관련 추가 필요
 
-    public static PostResponseDto fromEntity(Post post) {
+    public static PostResponseDto fromEntity(Post post, boolean isLiked) {
         List<String> hashtags = post.getPostHashtags().stream()
                 .map(postHashtag -> postHashtag.getHashtag().getTagName())
                 .collect(Collectors.toList());
@@ -43,6 +44,7 @@ public class PostResponseDto {
                 .writerNickname(post.getUser().getName())
                 .viewCount(post.getViewCount())
                 .likeCount(post.getLikeCount())
+                .isLiked(isLiked)
                 .visibility(post.getVisibility())
                 .createdAt(post.getCreatedAt())
                 .updatedAt(post.getUpdatedAt())
