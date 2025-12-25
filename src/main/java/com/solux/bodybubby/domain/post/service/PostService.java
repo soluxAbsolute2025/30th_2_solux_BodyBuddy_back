@@ -19,7 +19,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -80,13 +82,7 @@ public class PostService {
     @Transactional
     public Page<PostResponseDto> getAllPosts(Long currentUserId, Pageable pageable) {
         Page<Post> posts = postRepository.findAll(pageable);
-
-        return posts.map(post -> {
-            boolean isLiked = postLikeRepository.existsByPostAndUser(
-                    post, userRepository.getReferenceById(currentUserId)
-            );
-            return PostResponseDto.fromEntity(post, isLiked);
-        });
+        return convertToDtoPags(posts, currentUserId);
     }
 
     // 게시글 상세 조회
@@ -165,6 +161,21 @@ public class PostService {
         return posts.map(post -> {
             boolean isLiked = postLikeRepository.existsByPostAndUser(post,
                     userRepository.getReferenceById(currentUserId));
+            return PostResponseDto.fromEntity(post, isLiked);
+        });
+    }
+
+    // 게시글 키워드 검색
+    @Transactional(readOnly = true)
+    public  Page<PostResponseDto> getPostsByKeyword(String keyword, Long currentUserId, Pageable pageable) {
+        Page<Post> posts = postRepository.findAllByKeyword(keyword, currentUserId, pageable);
+        return convertToDtoPags(posts, currentUserId);
+    }
+
+    private Page<PostResponseDto> convertToDtoPags(Page<Post> posts, Long currentUserId) {
+        return posts.map(post -> {
+            boolean isLiked = postLikeRepository.findByPostAndUser(post,
+                    userRepository.findById(currentUserId).get()).isPresent();
             return PostResponseDto.fromEntity(post, isLiked);
         });
     }

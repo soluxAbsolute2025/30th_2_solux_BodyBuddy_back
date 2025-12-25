@@ -19,4 +19,12 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             @Param("tagName") String tagName,
             @Param("currentUserId") Long currentUserId,
             Pageable pageable);
+
+    @Query("SELECT p FROM Post p " +
+            "WHERE (p.visibility = 'PUBLIC' OR p.user.id = :currentUserId) " +
+            "AND (p.title LIKE %:keyword% OR p.content LIKE %:keyword%)")
+    Page<Post> findAllByKeyword(
+            @Param("keyword") String keyword,
+            @Param("currentUserId") Long currentUserId,
+            Pageable pageable);
 }

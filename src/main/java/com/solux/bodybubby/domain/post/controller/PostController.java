@@ -62,10 +62,20 @@ public class PostController {
     @GetMapping("/hashtag")
     public ResponseEntity<Page<PostResponseDto>> getPostsByHashtag(
             @RequestParam String tagName,
-            Long userId,
+            @RequestHeader(value = "userId", defaultValue = "1") Long currentUserId,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
-        Page<PostResponseDto> responses = postService.getPostsByHashtag(tagName, userId, pageable);
+        Page<PostResponseDto> responses = postService.getPostsByHashtag(tagName, currentUserId, pageable);
+        return ResponseEntity.ok(responses);
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<Page<PostResponseDto>> searchPostsByKeyword(
+            @RequestParam String keyword,
+            @RequestHeader(value = "userId", defaultValue = "1") Long currentUserId,
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+
+        Page<PostResponseDto> responses = postService.getPostsByKeyword(keyword, currentUserId, pageable);
         return ResponseEntity.ok(responses);
     }
 }
