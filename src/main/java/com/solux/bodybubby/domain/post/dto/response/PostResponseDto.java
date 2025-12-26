@@ -21,7 +21,6 @@ public class PostResponseDto {
     private String title;
     private String content;
     private String writerNickname;
-    private Integer viewCount;
     private Integer likeCount;
     private boolean isLiked;
     private Visibility visibility;
@@ -42,7 +41,6 @@ public class PostResponseDto {
                 .title(post.getTitle())
                 .content(post.getContent())
                 .writerNickname(post.getUser().getName())
-                .viewCount(post.getViewCount())
                 .likeCount(post.getLikeCount())
                 .isLiked(isLiked)
                 .visibility(post.getVisibility())

@@ -49,7 +49,6 @@ public class PostService {
                 .title(dto.getTitle())
                 .content(dto.getContent())
                 .visibility(dto.getVisibility())
-                .viewCount(0)
                 .likeCount(0)
                 .build();
 

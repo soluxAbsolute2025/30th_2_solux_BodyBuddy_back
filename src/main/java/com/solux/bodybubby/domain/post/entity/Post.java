@@ -36,8 +36,6 @@ public class Post extends BaseTimeEntity {
     private String content;
 
     @Builder.Default
-    private Integer viewCount = 0;
-    @Builder.Default
     private Integer likeCount = 0;
 
     @Enumerated(EnumType.STRING)
