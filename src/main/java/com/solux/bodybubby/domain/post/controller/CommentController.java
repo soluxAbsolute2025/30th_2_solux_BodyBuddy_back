@@ -17,7 +17,7 @@ public class CommentController {
     public ResponseEntity<Long> createComment(
             @PathVariable Long postId,
             @RequestBody CommentRequestDto dto,
-            Long userId) {
+            @RequestHeader(value = "userId", defaultValue = "1") Long userId) {
 
         // 작성자를 userId가 아닌 토큰에서 userId 추출하는 것으로 수정 필요
         Long commentId = commentService.createComment(postId, dto.getContent(), userId);
@@ -28,7 +28,7 @@ public class CommentController {
     public ResponseEntity<Void> updateComment(
             @PathVariable Long commentId,
             @RequestBody CommentRequestDto dto,
-            Long userId) {
+            @RequestHeader(value = "userId", defaultValue = "1") Long userId) {
 
         // 작성자를 userId가 아닌 토큰에서 userId 추출하는 것으로 수정 필요
         commentService.updateComment(commentId, dto.getContent(), userId);
@@ -39,7 +39,7 @@ public class CommentController {
     @DeleteMapping("/comments/{commentId}")
     public ResponseEntity<Void> deleteComment(
             @PathVariable Long commentId,
-            Long userId) {
+            @RequestHeader(value = "userId", defaultValue = "1") Long userId) {
 
         // 작성자를 userId가 아닌 토큰에서 userId 추출하는 것으로 수정 필요
         commentService.deleteComment(commentId, userId);
