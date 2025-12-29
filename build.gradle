@@ -37,6 +37,11 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	//소셜 로그인을 구현하려면 oauth2-client 라이브러리가 반드시 필요
+	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+	//테스트용 DB 추가
+	runtimeOnly 'com.h2database:h2'
 }
 
 tasks.named('test') {
