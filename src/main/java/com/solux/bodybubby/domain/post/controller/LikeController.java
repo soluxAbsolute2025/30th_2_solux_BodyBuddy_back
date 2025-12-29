@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/posts/{postId}/likes")
+@RequestMapping("/api/feeds/{postId}/likes")
 @RequiredArgsConstructor
 public class LikeController {
 
