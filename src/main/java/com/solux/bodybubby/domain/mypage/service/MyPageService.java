@@ -4,9 +4,7 @@ import com.solux.bodybubby.domain.badge.entity.Badge;
 import com.solux.bodybubby.domain.badge.entity.UserBadge;
 import com.solux.bodybubby.domain.badge.repository.BadgeRepository;
 import com.solux.bodybubby.domain.badge.repository.UserBadgeRepository;
-import com.solux.bodybubby.domain.mypage.dto.BadgeDto;
-import com.solux.bodybubby.domain.mypage.dto.BadgeResponse;
-import com.solux.bodybubby.domain.mypage.dto.MyPageMainResponse;
+import com.solux.bodybubby.domain.mypage.dto.*;
 import com.solux.bodybubby.domain.mypage.entity.LevelTier;
 import com.solux.bodybubby.domain.mypage.entity.MyPage;
 import com.solux.bodybubby.domain.mypage.repository.MyPageRepository;
@@ -80,5 +78,30 @@ public class MyPageService {
                         .acquiredAt(userBadgeMap.get(badge.getId())) // 없으면 null
                         .build())
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public GoalResponse getMyGoals(Long userId) {
+        MyPage myPage = myPageRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("정보를 찾을 수 없습니다."));
+
+        return GoalResponse.builder()
+                .waterGoal(myPage.getWaterGoal())
+                .mealGoal(myPage.getMealGoal())
+                .medicineGoal(myPage.getMedicineGoal())
+                .build();
+    }
+
+    @Transactional
+    public void updateMyGoals(Long userId, GoalRequest goalRequest) {
+        MyPage myPage = myPageRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("정보를 찾을 수 없습니다."));
+
+        // 엔티티의 비즈니스 메서드를 호출하여 수정
+        myPage.updateGoals(
+                goalRequest.getWaterGoal(),
+                goalRequest.getMealGoal(),
+                goalRequest.getMedicineGoal()
+        );
     }
 }
