@@ -26,6 +26,9 @@ public class MyPage {
     @Column(name = "profile_image_url")
     private String profileImageUrl;
 
+    @Column(name = "status_message", length = 100)
+    private String statusMessage; // 예)"건강한 라이프스타일 실천 중"
+
     @Column(length = 1)
     private String gender;
 
@@ -35,7 +38,9 @@ public class MyPage {
     private BigDecimal weight;
 
     private Integer level;
-    private Integer exp;
+
+    @Column(name = "cumulative_points")
+    private Integer cumulativePoints; // 누적 활동 지표(exp_points)
 
     @Column(name = "points_balance")
     private Integer pointsBalance;
