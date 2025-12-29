@@ -38,7 +38,7 @@ public class PostService {
     @Transactional
     public Long createPost(PostRequestDto dto, Long currentUserId) {
         // 임시로 1번 유저를 작성자로 지정
-        User user = userRepository.findById(currentUserId)
+        User user = userRepository.findById(1L)
                 .orElseThrow(() -> new IllegalArgumentException("테스트용 유저(ID:1)가 DB에 없습니다."));
 
 //        User user = userRepository.findById(currentUserId)
