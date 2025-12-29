@@ -18,7 +18,9 @@ public class MyPage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /** 사용자 (1:1) */
+    /**
+     * 사용자 (1:1)
+     */
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
@@ -36,6 +38,22 @@ public class MyPage {
 
     private BigDecimal height;
     private BigDecimal weight;
+
+    @Column(name = "water_goal")
+    private Integer waterGoal;
+
+    @Column(name = "meal_goal")
+    private Integer mealGoal;
+
+    @Column(name = "medicine_goal")
+    private Integer medicineGoal;
+
+    // 목표 수정을 위한 비즈니스 메서드
+    public void updateGoals(Integer waterGoal, Integer mealGoal, Integer medicineGoal) {
+        this.waterGoal = waterGoal;
+        this.mealGoal = mealGoal;
+        this.medicineGoal = medicineGoal;
+    }
 
     private Integer level;
 
