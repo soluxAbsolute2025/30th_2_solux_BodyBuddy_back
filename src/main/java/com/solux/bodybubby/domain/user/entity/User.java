@@ -1,6 +1,5 @@
 package com.solux.bodybubby.domain.user.entity;
 
-import com.solux.bodybubby.domain.mypage.entity.MyPage;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -18,69 +17,85 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /**
-     * 기본 계정 정보
-     */
-    @Column(name = "login_id", length = 50, unique = true)
-    private String loginId;
-
-    @Column(length = 255)
-    private String password;
-
-    @Column(length = 100, unique = true)
+    // 소셜 로그인 필수 정보
+    @Column(length = 100, unique = true, nullable = false)
     private String email;
 
-    @Column(length = 100)
-    private String name;
+    @Column(length = 20)
+    private String provider;    // "google"
 
-    /**
-     * 온보딩 수집 정보
-     */
-    @Column(length = 50)
-    private String nickname; // 닉네임
+    @Column(name = "provider_id", length = 100)
+    private String providerId;  // 구글 고유 ID (sub)
 
-    @Column(name = "privacy_scope")
-    private String privacyScope; // 허용 범위 (수분만 공유 등)
+    // 온보딩 정보: 프로필 및 기본 정보
+    @Column(length = 50, unique = true) // 중복 확인 명세 반영
+    private String nickname;
 
-    @Column(name = "referrer_id")
-    private String referrerId; // 추천인 아이디
+    @Column(name = "profile_image_url", length = 255)
+    private String profileImageUrl;
+
+    private Integer age;
+
+    @Column(length = 10)
+    private String gender;
+
+    private Double height;
+    private Double weight;
+
+    // 일일 목표 정보 (DB 컬럼명 명시적 지정)
+    @Column(name = "daily_step_goal")
+    private Integer dailyStepGoal;
+
+    @Column(name = "daily_workout_goal")
+    private Integer dailyWorkoutGoal;
+
+    @Column(name = "daily_sleep_goal")
+    private Integer dailySleepGoal;
+
+    @Column(length = 255)
+    private String interests;
+
+    // 설정 정보
+    @Column(name = "privacy_scope", length = 50)
+    private String privacyScope;
+
+    @Column(name = "is_notification_enabled")
+    private boolean isNotificationEnabled;
+
+    @Column(name = "referrer_id", length = 50)
+    private String referrerId;
 
     @Column(name = "is_onboarded")
-    private boolean isOnboarded = false; // 온보딩 완료 여부
+    private boolean isOnboarded = false;
 
-    /**
-     * 시간 정보
-     */
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    /**
-     * 마이페이지 (1:1 관계)
-     */
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private MyPage myPage;
 
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
     }
 
     /**
-     * 온보딩 정보 업데이트 메서드
-     * 요구사항에 따라 신체 정보(키, 몸무게 등)는 제외하고 핵심 정보만 업데이트합니다.
+     * [온보딩 업데이트 비즈니스 로직]
      */
-    public void updateOnboarding(String nickname, String privacyScope, String referrerId) {
+    public void updateOnboarding(String nickname, String profileImageUrl, Integer age, String gender,
+                                 Double height, Double weight, Integer dailyStepGoal,
+                                 Integer dailyWorkoutGoal, Integer dailySleepGoal,
+                                 String interests, String privacyScope,
+                                 boolean isNotificationEnabled, String referrerId) {
         this.nickname = nickname;
+        this.profileImageUrl = profileImageUrl;
+        this.age = age;
+        this.gender = gender;
+        this.height = height;
+        this.weight = weight;
+        this.dailyStepGoal = dailyStepGoal;
+        this.dailyWorkoutGoal = dailyWorkoutGoal;
+        this.dailySleepGoal = dailySleepGoal;
+        this.interests = interests;
         this.privacyScope = privacyScope;
+        this.isNotificationEnabled = isNotificationEnabled;
         this.referrerId = referrerId;
         this.isOnboarded = true;
     }
