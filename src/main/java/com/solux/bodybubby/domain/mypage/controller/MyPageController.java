@@ -1,13 +1,13 @@
 package com.solux.bodybubby.domain.mypage.controller;
 
 import com.solux.bodybubby.domain.mypage.dto.BadgeResponse;
+import com.solux.bodybubby.domain.mypage.dto.GoalRequest;
+import com.solux.bodybubby.domain.mypage.dto.GoalResponse;
 import com.solux.bodybubby.domain.mypage.dto.MyPageMainResponse;
 import com.solux.bodybubby.domain.mypage.service.MyPageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -39,5 +39,24 @@ public class MyPageController {
         // 테스트를 위해 유저 ID 1L 사용
         List<BadgeResponse> response = myPageService.getUserBadgeCollection(1L);
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * [나의 목표 조회]
+     * 사용자가 설정한 수분, 식단, 약 복용 목표 수치를 조회합니다.
+     */
+    @GetMapping("/goals") // GET /api/mypage/goals
+    public ResponseEntity<GoalResponse> getMyGoals() {
+        return ResponseEntity.ok(myPageService.getMyGoals(1L));
+    }
+
+    /**
+     * [나의 목표 수정]
+     * 사용자가 입력한 새로운 목표 수치를 저장합니다.
+     */
+    @PatchMapping("/goals") // PATCH /api/mypage/goals
+    public ResponseEntity<Void> updateMyGoals(@RequestBody GoalRequest goalRequest) {
+        myPageService.updateMyGoals(1L, goalRequest);
+        return ResponseEntity.ok().build();
     }
 }
