@@ -40,7 +40,7 @@ public class PostResponseDto {
                 .id(post.getId())
                 .title(post.getTitle())
                 .content(post.getContent())
-                .writerNickname(post.getUser().getName())
+                .writerNickname(post.getUser().getNickname())
                 .likeCount(post.getLikeCount())
                 .isLiked(isLiked)
                 .visibility(post.getVisibility())

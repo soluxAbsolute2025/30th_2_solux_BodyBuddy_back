@@ -20,7 +20,7 @@ public class CommentResponseDto {
         return CommentResponseDto.builder()
                 .id(comment.getId())
                 .content(comment.getContent())
-                .writerNickname(comment.getUser().getName())
+                .writerNickname(comment.getUser().getNickname())
                 .createdAt(comment.getCreatedAt())
                 .updatedAt(comment.getUpdatedAt())
                 // 생성 시간과 수정 시간이 다르면 (수정됨)으로 판단 (1초 미만 오차 허용)

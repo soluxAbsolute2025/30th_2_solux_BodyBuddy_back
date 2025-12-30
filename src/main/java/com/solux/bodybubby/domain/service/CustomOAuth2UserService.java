@@ -28,7 +28,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 .orElseGet(() -> userRepository.save(
                         User.builder()
                                 .email(email)
-                                .name(name)
+                                .nickname(name)
                                 .build()
                 ));
 

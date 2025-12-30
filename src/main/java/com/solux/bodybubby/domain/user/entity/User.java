@@ -66,6 +66,7 @@ public class User {
     private String referrerId;
 
     @Column(name = "is_onboarded")
+    @Builder.Default
     private boolean isOnboarded = false;
 
     @Column(name = "created_at", updatable = false)
