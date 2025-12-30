@@ -1,24 +1,36 @@
 package com.solux.bodybubby.domain.healthlog.entity;
 
 import com.solux.bodybubby.domain.user.entity.User;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "water_log")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED) // 1. 외부에서 빈 객체 생성 차단
 public class WaterLog extends HealthLog {
 
-    @Column(name = "amount_ml")
+    @Column(name = "amount_ml", nullable = false)
     private Integer amountMl;
 
-    protected WaterLog() {
+    // 2. 빌더 패턴 적용 (부모 필드까지 포함하여 생성)
+    @Builder
+    public WaterLog(User user, LocalDateTime loggedAt, Integer amountMl) {
+        super(user, loggedAt); // HealthLog(부모)의 필드 초기화
+        this.amountMl = amountMl;
     }
 
-    public WaterLog(User user, LocalDateTime loggedAt, Integer amountMl) {
-        super(user, loggedAt);
+    // 3. 비즈니스 로직 (수정 메서드)
+    // Setter를 막 열어두지 말고, 이렇게 명확한 이름의 메서드를 만듭니다.
+    public void updateAmount(Integer amountMl) {
+        if (amountMl == null || amountMl < 0) {
+            throw new IllegalArgumentException("섭취량은 0 이상이어야 합니다.");
+        }
         this.amountMl = amountMl;
     }
 }
