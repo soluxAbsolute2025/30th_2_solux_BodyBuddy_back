@@ -18,13 +18,18 @@ public class MyPage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /** 사용자 (1:1) */
+    /**
+     * 사용자 (1:1)
+     */
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @Column(name = "profile_image_url")
     private String profileImageUrl;
+
+    @Column(name = "status_message", length = 100)
+    private String statusMessage; // 예)"건강한 라이프스타일 실천 중"
 
     @Column(length = 1)
     private String gender;
@@ -34,8 +39,26 @@ public class MyPage {
     private BigDecimal height;
     private BigDecimal weight;
 
+    @Column(name = "water_goal")
+    private Integer waterGoal;
+
+    @Column(name = "meal_goal")
+    private Integer mealGoal;
+
+    @Column(name = "medicine_goal")
+    private Integer medicineGoal;
+
+    // 목표 수정을 위한 비즈니스 메서드
+    public void updateGoals(Integer waterGoal, Integer mealGoal, Integer medicineGoal) {
+        this.waterGoal = waterGoal;
+        this.mealGoal = mealGoal;
+        this.medicineGoal = medicineGoal;
+    }
+
     private Integer level;
-    private Integer exp;
+
+    @Column(name = "cumulative_points")
+    private Integer cumulativePoints; // 누적 활동 지표(exp_points)
 
     @Column(name = "points_balance")
     private Integer pointsBalance;
