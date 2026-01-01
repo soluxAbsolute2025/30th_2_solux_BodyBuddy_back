@@ -3,7 +3,9 @@ package com.solux.bodybubby.domain.user.controller;
 import com.solux.bodybubby.domain.user.dto.UserOnboardingRequestDto;
 import com.solux.bodybubby.domain.user.dto.UserSignupRequestDto;
 import com.solux.bodybubby.domain.user.service.UserService;
+import com.solux.bodybubby.global.common.ApiResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,15 +17,25 @@ public class UserController {
     private final UserService userService;
 
     /**
-     * [POST] 회원가입 API
-     * 명세서에 정의된 /api/users/signup 경로입니다.
-     * 소셜 로그인 성공 후 최초 1회 호출하거나 테스트용으로 사용됩니다.
+     * [POST] 회원가입 API - /api/users/signup
      */
-    @PostMapping("/signup")
-    public ResponseEntity<Long> signUp(@RequestBody UserSignupRequestDto requestDto) {
-        // 기존 UserService의 signUp 로직을 호출합니다.
-        // 소셜 로그인 도입 시 서비스 로직에서 email, provider 정보를 처리하도록 수정된 상태여야 합니다.
-        return ResponseEntity.ok(userService.signUp(requestDto.getEmail(), "google", requestDto.getReferrerId()));
+    @PostMapping("/api/users/signup")
+    public ResponseEntity<ApiResponse<Void>> signUp(@RequestBody UserSignupRequestDto requestDto) {
+        userService.signUp(requestDto);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(201, "회원가입이 완료되었습니다."));
+    }
+
+    /**
+     * [GET] 닉네임 중복 확인 API - /api/users/check-id
+     */
+    @GetMapping("/api/users/check-id")
+    public ResponseEntity<ApiResponse<Void>> checkNickname(@RequestParam String nickname) {
+        if (userService.checkNicknameDuplicate(nickname)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(400, "이미 사용 중인 닉네임입니다."));
+        }
+        return ResponseEntity.ok(ApiResponse.success(200, "사용 가능한 닉네임입니다."));
     }
 
     /**
@@ -37,33 +49,30 @@ public class UserController {
     }
 
     /**
-     * [GET] 닉네임 중복 확인 API
-     * 명세서: /api/users/check-id
+     * [POST] 온보딩 정보 등록 API - /api/users/onboarding
      */
-    @GetMapping("/check-id")
-    public ResponseEntity<Boolean> checkNickname(@RequestParam String nickname) {
-        return ResponseEntity.ok(userService.checkNicknameDuplicate(nickname));
-    }
-
-    /**
-     * [POST] 온보딩 정보 등록 API
-     * 명세서: /api/users/onboarding
-     */
-    @PostMapping("/onboarding")
-    public ResponseEntity<String> registerOnboarding(
+    @PostMapping("/api/users/onboarding")
+    public ResponseEntity<ApiResponse<Void>> registerOnboarding(
             @RequestHeader("userId") Long userId,
             @RequestBody UserOnboardingRequestDto requestDto) {
         userService.registerOnboarding(userId, requestDto);
-        return ResponseEntity.ok("온보딩 정보가 등록되었습니다.");
+        return ResponseEntity.ok(ApiResponse.success(200, "온보딩 정보가 등록되었습니다."));
     }
 
     /**
-     * [DELETE] 회원 탈퇴 API
-     * 명세서: /api/user/signout
+     * [DELETE] 회원 탈퇴 API - /api/user/signout
      */
-    @DeleteMapping("/signout")
-    public ResponseEntity<String> signOut(@RequestHeader("userId") Long userId) {
-        userService.signOut(userId);
-        return ResponseEntity.ok("회원 탈퇴가 완료되었습니다.");
+    @DeleteMapping("/api/user/signout")
+    public ResponseEntity<ApiResponse<Void>> signOut(@RequestHeader("userId") Long userId) {
+        userService.withdrawUser(userId);
+        return ResponseEntity.ok(ApiResponse.success(200, "회원 탈퇴가 완료되었습니다."));
+    }
+
+    /**
+     * [POST] 로그아웃 API - /api/google/logout
+     */
+    @PostMapping("/api/google/logout")
+    public ResponseEntity<ApiResponse<Void>> logout() {
+        return ResponseEntity.ok(ApiResponse.success(200, "로그아웃 되었습니다."));
     }
 }

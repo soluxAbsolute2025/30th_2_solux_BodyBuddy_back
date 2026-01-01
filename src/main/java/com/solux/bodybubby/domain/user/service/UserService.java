@@ -1,8 +1,11 @@
 package com.solux.bodybubby.domain.user.service;
 
 import com.solux.bodybubby.domain.user.dto.UserOnboardingRequestDto;
+import com.solux.bodybubby.domain.user.dto.UserSignupRequestDto;
 import com.solux.bodybubby.domain.user.entity.User;
 import com.solux.bodybubby.domain.user.repository.UserRepository;
+import com.solux.bodybubby.global.exception.BusinessException;
+import com.solux.bodybubby.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,11 +28,11 @@ public class UserService {
      * 구글 로그인 성공 후, 이메일과 소셜 정보를 기반으로 최소 정보를 먼저 저장합니다.
      */
     @Transactional
-    public Long signUp(String email, String provider, String providerId) {
+    public Long signUp(UserSignupRequestDto requestDto) {
         User user = User.builder()
-                .email(email)
-                .provider(provider)
-                .providerId(providerId)
+                .email(requestDto.getEmail())
+                .nickname(requestDto.getNickname())
+                .provider("google")
                 .isOnboarded(false)
                 .build();
         return userRepository.save(user).getId();
@@ -42,7 +45,7 @@ public class UserService {
     @Transactional
     public void registerOnboarding(Long userId, UserOnboardingRequestDto requestDto) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NoSuchElementException("존재하지 않는 유저입니다. id=" + userId));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // 업데이트된 엔티티의 인자 개수(13개)에 맞춰 모든 정보를 전달합니다.
         user.updateOnboarding(
@@ -64,10 +67,9 @@ public class UserService {
 
     /** [회원 탈퇴] */
     @Transactional
-    public void signOut(Long userId) {
-        if (!userRepository.existsById(userId)) {
-            throw new NoSuchElementException("탈퇴시키려는 유저가 존재하지 않습니다. id=" + userId);
-        }
-        userRepository.deleteById(userId);
+    public void withdrawUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        userRepository.delete(user); // [cite: 127]
     }
 }
