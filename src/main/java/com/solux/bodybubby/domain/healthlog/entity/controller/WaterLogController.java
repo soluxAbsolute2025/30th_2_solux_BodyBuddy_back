@@ -1,8 +1,9 @@
 package com.solux.bodybubby.domain.healthlog.entity.controller;
 
+import com.solux.bodybubby.domain.healthlog.entity.WaterLog;
+import com.solux.bodybubby.domain.healthlog.entity.service.WaterLogService;
 import com.solux.bodybubby.domain.healthlog.entity.dto.request.WaterLogRequestDTO;
 import com.solux.bodybubby.domain.healthlog.entity.dto.response.WaterLogResponseDTO;
-import com.solux.bodybubby.domain.healthlog.entity.service.WaterLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;

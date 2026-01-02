@@ -3,10 +3,12 @@ package com.solux.bodybubby.domain.healthlog.entity;
 import com.solux.bodybubby.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
 
 @Getter
+@SuperBuilder
 @MappedSuperclass
 public abstract class HealthLog {
 
@@ -16,10 +18,10 @@ public abstract class HealthLog {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    protected User user;
 
     @Column(name = "logged_at", nullable = false)
-    private LocalDateTime loggedAt;
+    protected LocalDateTime loggedAt;
 
     protected HealthLog() {
     }
