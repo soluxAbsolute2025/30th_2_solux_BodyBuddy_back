@@ -1,12 +1,13 @@
-package com.solux.bodybubby.domain.config;
+package com.solux.bodybubby.global.config;
 
-import com.solux.bodybubby.domain.service.CustomOAuth2UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
+
+import com.solux.bodybubby.global.service.CustomOAuth2UserService;
 
 @Configuration
 @EnableWebSecurity // 스프링 시큐리티 설정 활성화
