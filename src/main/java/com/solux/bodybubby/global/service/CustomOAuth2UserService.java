@@ -1,4 +1,4 @@
-package com.solux.bodybubby.service;
+package com.solux.bodybubby.domain.service;
 
 import com.solux.bodybubby.domain.user.entity.User;
 import com.solux.bodybubby.domain.user.repository.UserRepository;

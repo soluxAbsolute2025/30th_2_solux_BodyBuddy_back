@@ -1,6 +1,6 @@
-package com.solux.bodybubby.config;
+package com.solux.bodybubby.domain.config;
 
-import com.solux.bodybubby.service.CustomOAuth2UserService;
+import com.solux.bodybubby.domain.service.CustomOAuth2UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,9 +21,11 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable()) // API 서버 위주이므로 CSRF 보안 비활성화
             .headers(headers -> headers.frameOptions(options -> options.disable())) // H2 콘솔 사용 시 필요
             .authorizeHttpRequests(auth -> auth
-                // 로그인 없이도 접근 가능한 경로들 (메인 페이지, 정적 리소스 등)
-                .requestMatchers("/", "/css/**", "/images/**", "/js/**", "/h2-console/**").permitAll()
-                // 그 외 모든 요청은 인증(로그인)이 필요함
+                // 1. 수분 기록 API와 H2 콘솔 등에 대해 누구나 접근 가능하도록 허용
+                .requestMatchers("/", "/css/**", "/images/**", "/js/**", "/h2-console/**", "/api/water-log/**").permitAll()
+                
+                // .requestMatchers("/api/**").permitAll() 
+
                 .anyRequest().authenticated()
             )
             .logout(logout -> logout
