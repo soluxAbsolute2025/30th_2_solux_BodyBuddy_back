@@ -7,10 +7,9 @@ import com.solux.bodybubby.domain.user.repository.UserRepository;
 import com.solux.bodybubby.global.exception.BusinessException;
 import com.solux.bodybubby.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.NoSuchElementException;
 
 @Service
 @RequiredArgsConstructor
@@ -18,58 +17,89 @@ import java.util.NoSuchElementException;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    /** [닉네임 중복 확인] */
-    public boolean checkNicknameDuplicate(String nickname) {
-        return userRepository.existsByNickname(nickname);
-    }
-
-    /** * [소셜 회원가입/로그인 시 초기 유저 생성]
-     * 구글 로그인 성공 후, 이메일과 소셜 정보를 기반으로 최소 정보를 먼저 저장합니다.
+    /**
+     * [회원가입]
+     *
+     * @param dto 회원가입 요청 데이터 (loginId, password, email)
      */
     @Transactional
-    public Long signUp(UserSignupRequestDto requestDto) {
+    public void signup(UserSignupRequestDto dto) {
+        // 1. 아이디 중복 여부 재확인
+        if (userRepository.existsByLoginId(dto.getLoginId())) {
+            throw new IllegalArgumentException("이미 존재하는 아이디입니다.");
+        }
+
+        // 2. 유저 엔티티 생성 및 비밀번호 암호화 저장
         User user = User.builder()
-                .email(requestDto.getEmail())
-                .nickname(requestDto.getNickname())
-                .provider("google")
-                .isOnboarded(false)
+                .loginId(dto.getLoginId())
+                .password(passwordEncoder.encode(dto.getPassword())) // 보안을 위한 해싱 처리
+                .email(dto.getEmail())
                 .build();
-        return userRepository.save(user).getId();
+
+        userRepository.save(user);
     }
 
     /**
      * [온보딩 정보 등록]
-     * 닉네임, 프로필 이미지, 신체 정보 및 일일 목표를 모두 업데이트합니다.
+     * 완료 시 isOnboarded 플래그가 true로 변경
+     *
+     * @param userId 현재 로그인한 유저의 고유 ID
+     * @param dto    온보딩 요청 데이터 (닉네임, 나이, 키, 몸무게, 목표 걸음 수 등)
      */
     @Transactional
-    public void registerOnboarding(Long userId, UserOnboardingRequestDto requestDto) {
+    public void completeOnboarding(Long userId, UserOnboardingRequestDto dto) {
+        // 1. 대상 유저 조회
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
-        // 업데이트된 엔티티의 인자 개수(13개)에 맞춰 모든 정보를 전달합니다.
-        user.updateOnboarding(
-                requestDto.getNickname(),
-                requestDto.getProfileImageUrl(),
-                requestDto.getAge(),
-                requestDto.getGender(),
-                requestDto.getHeight(),
-                requestDto.getWeight(),
-                requestDto.getDailyStepGoal(),
-                requestDto.getDailyWorkoutGoal(),
-                requestDto.getDailySleepGoal(),
-                requestDto.getInterests(),
-                requestDto.getPrivacyScope(),
-                requestDto.isNotificationEnabled(),
-                requestDto.getReferrerId()
+        // 2. 관심사 리스트를 DB 저장을 위해 콤마 구분 문자열로 변환
+        String interestsStr = String.join(",", dto.getInterests());
+
+        // 3. 엔티티 내 비즈니스 로직을 호출하여 정보 업데이트 및 온보딩 상태 변경
+        user.completeOnboarding(
+                dto.getNickname(),
+                dto.getAge(),
+                dto.getGender(),
+                dto.getHeight(),
+                dto.getWeight(),
+                dto.getDailyStepGoal(),
+                dto.getDailyWorkoutGoal(),
+                dto.getDailySleepHoursGoal(),
+                dto.getDailySleepMinutesGoal(),
+                interestsStr,
+                dto.getReferrerId()
         );
     }
 
-    /** [회원 탈퇴] */
+    /**
+     * [아이디 중복 확인]
+     *
+     * @param loginId 중복 확인 대상 아이디
+     * @return 사용 가능 여부 (true: 사용 가능, false: 중복됨)
+     */
+    public boolean isLoginIdAvailable(String loginId) {
+        return !userRepository.existsByLoginId(loginId);
+    }
+
+    /**
+     * [닉네임 중복 확인]
+     *
+     * @param nickname 중복 확인 대상 닉네임
+     * @return 사용 가능 여부 (true: 사용 가능, false: 중복됨)
+     */
+    public boolean isNicknameAvailable(String nickname) {
+        return !userRepository.existsByNickname(nickname);
+    }
+
+    /**
+     * [회원 탈퇴]
+     */
     @Transactional
     public void withdrawUser(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
-        userRepository.delete(user); // [cite: 127]
+        userRepository.delete(user);
     }
 }
