@@ -18,22 +18,19 @@ public class User extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 소셜 로그인 필수 정보
+    // 계정 정보 (ID/PW 방식)
+    @Column(name = "login_id", length = 20, unique = true, nullable = false)
+    private String loginId;
+
+    @Column(nullable = false)
+    private String password;
+
     @Column(length = 100, unique = true, nullable = false)
-    private String email; // 구글 계정 이메일
-
-    @Column(length = 20)
-    private String provider;    // "google"
-
-    @Column(name = "provider_id", length = 100)
-    private String providerId;  // 구글 측 고유 ID (sub)
+    private String email;
 
     // 온보딩 정보: 프로필 및 기본 정보
-    @Column(length = 50, unique = true) // 중복 확인 명세 반영
+    @Column(length = 50, unique = true)
     private String nickname;
-
-    @Column(name = "profile_image_url", length = 255)
-    private String profileImageUrl; // 프로필 이미지 경로
 
     private Integer age;
 
@@ -49,21 +46,51 @@ public class User extends BaseTimeEntity {
     @Column(name = "daily_workout_goal")
     private Integer dailyWorkoutGoal;
 
-    @Column(name = "daily_sleep_goal")
-    private Integer dailySleepGoal;
+    @Column(name = "daily_sleep_hours_goal")
+    private Integer dailySleepHoursGoal; // 수면 목표 (시간)
 
-    @Column(length = 255)
-    private String interests; // 관심사 키워드
+    @Column(name = "daily_sleep_minutes_goal")
+    private Integer dailySleepMinutesGoal; // 수면 목표 (분)
 
-    // 설정 정보
-    @Column(name = "privacy_scope", length = 50)
-    private String privacyScope; // 공개 범위
-
-    @Column(name = "is_notification_enabled")
-    private boolean isNotificationEnabled; // 알림 수신 동의
+    @Column(columnDefinition = "TEXT")
+    private String interests; // 관심사 키워드를 문자열로 변환해 저장
 
     @Column(name = "referrer_id", length = 50)
     private String referrerId; //추천인 아이디
+
+    // 설정 정보
+    @Column(length = 100)
+    private String introduction;
+
+    @Column(name = "profile_image_url")
+    private String profileImageUrl;
+
+    // 마이페이지 활동 요약 데이터 추가
+    @Column(name = "consecutive_attendance")
+    @Builder.Default
+    private Integer consecutiveAttendance = 0; // 연속 출석 일수
+
+    @Column(name = "completed_challenges_count")
+    @Builder.Default
+    private Integer completedChallengesCount = 0; // 완료한 챌린지 수
+
+    // 레벨 및 포인트 시스템
+    @Builder.Default
+    private Integer level = 1;
+
+    @Column(name = "current_exp")
+    @Builder.Default
+    private Integer currentExp = 0;
+
+    // 공개 범위
+    @Builder.Default
+    private boolean isWaterPublic = true;
+    @Builder.Default
+    private boolean isWorkoutPublic = true;
+    @Builder.Default
+    private boolean isDietPublic = true;
+    @Builder.Default
+    private boolean isSleepPublic = true;
 
     @Column(name = "is_onboarded")
     @Builder.Default
@@ -78,26 +105,44 @@ public class User extends BaseTimeEntity {
     }
 
     /**
-     * [온보딩 업데이트 비즈니스 로직]
+     * [온보딩 완료 비즈니스 로직]
      */
-    public void updateOnboarding(String nickname, String profileImageUrl, Integer age, String gender,
-                                 Double height, Double weight, Integer dailyStepGoal,
-                                 Integer dailyWorkoutGoal, Integer dailySleepGoal,
-                                 String interests, String privacyScope,
-                                 boolean isNotificationEnabled, String referrerId) {
+    public void completeOnboarding(String nickname, Integer age, String gender, Double height, Double weight,
+                                   Integer dailyStepGoal, Integer dailyWorkoutGoal,
+                                   Integer dailySleepHoursGoal, Integer dailySleepMinutesGoal,
+                                   String interests, String referrerId) {
         this.nickname = nickname;
-        this.profileImageUrl = profileImageUrl;
         this.age = age;
         this.gender = gender;
         this.height = height;
         this.weight = weight;
         this.dailyStepGoal = dailyStepGoal;
         this.dailyWorkoutGoal = dailyWorkoutGoal;
-        this.dailySleepGoal = dailySleepGoal;
+        this.dailySleepHoursGoal = dailySleepHoursGoal;
+        this.dailySleepMinutesGoal = dailySleepMinutesGoal;
         this.interests = interests;
-        this.privacyScope = privacyScope;
-        this.isNotificationEnabled = isNotificationEnabled;
         this.referrerId = referrerId;
         this.isOnboarded = true;
+    }
+
+    /**
+     * [프로필 수정 비즈니스 로직]
+     */
+    public void updateProfile(String nickname, String introduction, String profileImageUrl, String email) {
+        this.nickname = nickname;
+        this.introduction = this.introduction;
+        this.profileImageUrl = profileImageUrl;
+        this.email = email;
+    }
+
+    /**
+     * [경험치 획득 및 연속 출석 업데이트 비즈니스 로직]
+     */
+    public void addExp(Integer exp) {
+        this.currentExp += exp;
+    }
+
+    public void updateAttendance(Integer days) {
+        this.consecutiveAttendance = days;
     }
 }
