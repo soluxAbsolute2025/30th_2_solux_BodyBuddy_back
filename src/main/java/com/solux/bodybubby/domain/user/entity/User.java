@@ -130,9 +130,16 @@ public class User extends BaseTimeEntity {
      */
     public void updateProfile(String nickname, String introduction, String profileImageUrl, String email) {
         this.nickname = nickname;
-        this.introduction = this.introduction;
+        this.introduction = introduction;
         this.profileImageUrl = profileImageUrl;
         this.email = email;
+    }
+
+    /**
+     * [비밀번호 변경 비즈니스 로직]
+     */
+    public void updatePassword(String encodedPassword) {
+        this.password = encodedPassword;
     }
 
     /**
