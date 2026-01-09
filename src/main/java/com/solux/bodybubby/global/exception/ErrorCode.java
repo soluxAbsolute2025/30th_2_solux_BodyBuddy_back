@@ -15,6 +15,11 @@ public enum ErrorCode {
     // --- 유저 관련 에러 (U000) ---
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "U001", "존재하지 않는 사용자입니다."),
     UNAUTHORIZED_ACCESS(HttpStatus.FORBIDDEN, "U002", "접근 권한이 없습니다."),
+    DUPLICATE_LOGIN_ID(HttpStatus.BAD_REQUEST, "U003", "이미 존재하는 아이디입니다."),
+    DUPLICATE_EMAIL(HttpStatus.BAD_REQUEST, "U004", "이미 사용 중인 이메일입니다."),
+    INVALID_VERIFICATION_CODE(HttpStatus.BAD_REQUEST, "U005", "인증 번호가 일치하지 않습니다."),
+    DUPLICATE_NICKNAME(HttpStatus.BAD_REQUEST, "U006", "이미 사용 중인 닉네임입니다."),
+    INVALID_PASSWORD(HttpStatus.UNAUTHORIZED, "U007", "비밀번호가 일치하지 않습니다."),
 
     // --- 게시글 관련 에러 (P000) ---
     POST_NOT_FOUND(HttpStatus.NOT_FOUND, "P001", "존재하지 않는 게시글입니다."),
