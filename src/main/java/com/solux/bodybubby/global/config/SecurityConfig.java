@@ -1,5 +1,6 @@
 package com.solux.bodybubby.global.config;
 
+import com.solux.bodybubby.global.service.CustomOAuth2UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,13 +20,13 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // API 서버 위주이므로 CSRF 보안 비활성화
-                .headers(headers -> headers.frameOptions(options -> options.disable())) // H2 콘솔 사용 시 필요
-                .authorizeHttpRequests(auth -> auth
-                        // 1. 수분 기록 API와 H2 콘솔 등에 대해 누구나 접근 가능하도록 허용
-                        .requestMatchers("/", "/css/**", "/images/**", "/js/**", "/h2-console/**", "/api/water-log/**").permitAll()
+            .csrf(csrf -> csrf.disable()) // API 서버 위주이므로 CSRF 보안 비활성화
+            .headers(headers -> headers.frameOptions(options -> options.disable())) // H2 콘솔 사용 시 필요
+            .authorizeHttpRequests(auth -> auth
+                // 1. 수분 기록 API와 H2 콘솔 등에 대해 누구나 접근 가능하도록 허용
+                .requestMatchers("/", "/css/**", "/images/**", "/js/**", "/h2-console/**", "/api/water-log/**").permitAll()
 
-                        // .requestMatchers("/api/**").permitAll()
+                // .requestMatchers("/api/**").permitAll()
 
                         .anyRequest().authenticated()
                 )
