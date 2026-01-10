@@ -33,9 +33,13 @@ public class SecurityConfig {
                 .headers(headers -> headers.frameOptions(options -> options.disable())) // H2 콘솔 사용 시 필요
                 .authorizeHttpRequests(auth -> auth
                         // 1. 수분 기록 API와 H2 콘솔 등에 대해 누구나 접근 가능하도록 허용
-                        .requestMatchers("/", "/css/**", "/images/**", "/js/**", "/h2-console/**", "/api/water-log/**").permitAll()
-
-                        // .requestMatchers("/api/**").permitAll()
+                        // 2. 회원가입(/signup), 로그인(/login), 중복확인(/check-*) API를 permitAll()에 추가하여 로그인 없이 접근 가능하게 합니다.
+                        .requestMatchers("/", "/css/**", "/images/**", "/js/**", "/h2-console/**", "/api/water-log/**",
+                        "/api/users/signup",
+                        "/api/users/login",
+                        "/api/users/check-id",
+                        "/api/users/check-nickname"
+                ).permitAll()
 
                         .anyRequest().authenticated()
                 )
