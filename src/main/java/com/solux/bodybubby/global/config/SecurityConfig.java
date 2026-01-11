@@ -22,7 +22,7 @@ public class SecurityConfig {
             .headers(headers -> headers.frameOptions(options -> options.disable())) // H2 콘솔 사용 시 필요
             .authorizeHttpRequests(auth -> auth
                 // 1. 수분 기록 API와 H2 콘솔 등에 대해 누구나 접근 가능하도록 허용
-                .requestMatchers("/", "/css/**", "/images/**", "/js/**", "/h2-console/**", "/api/water-log/**").permitAll()
+                .requestMatchers("/", "/css/**", "/images/**", "/js/**", "/h2-console/**", "/api/**").permitAll()
                 
                 // .requestMatchers("/api/**").permitAll() 
 
@@ -31,12 +31,7 @@ public class SecurityConfig {
             .logout(logout -> logout
                 .logoutSuccessUrl("/") // 로그아웃 성공 시 메인으로 이동
             )
-            .oauth2Login(oauth2 -> oauth2
-                .userInfoEndpoint(userInfo -> userInfo
-                    .userService(customOAuth2UserService) // 구글 로그인 성공 후 처리할 서비스 등록
-                )
-                .defaultSuccessUrl("/") // 로그인 성공 시 이동할 기본 페이지
-            );
+            ;
 
         return http.build();
     }

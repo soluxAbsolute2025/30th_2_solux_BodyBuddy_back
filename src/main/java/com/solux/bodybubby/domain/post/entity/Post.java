@@ -17,7 +17,7 @@ import java.util.List;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-@SQLDelete(sql = "UPDATE posts SET delete_at = CURRENT_TIMESTAMP WHERE id = ?")
+@SQLDelete(sql = "UPDATE posts SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
 public class Post extends BaseTimeEntity {
 
@@ -34,6 +34,8 @@ public class Post extends BaseTimeEntity {
 
     @Column(columnDefinition = "TEXT")
     private String content;
+
+    private String imageUrl;
 
     @Builder.Default
     private Integer likeCount = 0;
@@ -55,15 +57,15 @@ public class Post extends BaseTimeEntity {
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PostLike> likes = new ArrayList<>();
 
-    @Builder.Default
-    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<PostImage> images = new ArrayList<>();
-
 
     public void update(String title, String content, Visibility visibility) {
         this.title = title;
         this.content = content;
         this.visibility = visibility;
+    }
+
+    public void updateImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 
     public void increaseLikeCount() {
