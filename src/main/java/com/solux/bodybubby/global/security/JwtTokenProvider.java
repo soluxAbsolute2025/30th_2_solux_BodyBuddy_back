@@ -61,4 +61,25 @@ public class JwtTokenProvider {
                 .getPayload()
                 .getSubject();
     }
+
+    // 토큰에서 유저 ID 추출
+    public Long getUserId(String token) {
+        return Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .get("userId", Long.class);
+    }
+
+    // 토큰의 남은 유효 시간(밀리초) 계산
+    public long getExpiration(String token) {
+        Date expiration = Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .getExpiration();
+        return expiration.getTime() - new Date().getTime();
+    }
 }

@@ -23,6 +23,7 @@ public class SecurityConfig {
     private final CustomOAuth2UserService customOAuth2UserService;
     private final JwtTokenProvider jwtTokenProvider;
     private final CustomUserDetailsService customUserDetailsService;
+    private final org.springframework.data.redis.core.RedisTemplate<String, String> redisTemplate;
 
     /**
      * [비밀번호 암호화 빈 등록]
@@ -58,7 +59,7 @@ public class SecurityConfig {
                 )
 
                 // JWT 필터를 시큐리티 체인 앞에 추가
-                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, customUserDetailsService), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, customUserDetailsService, redisTemplate), UsernamePasswordAuthenticationFilter.class)
 
                 .logout(logout -> logout
                         .logoutSuccessUrl("/") // 로그아웃 성공 시 메인으로 이동

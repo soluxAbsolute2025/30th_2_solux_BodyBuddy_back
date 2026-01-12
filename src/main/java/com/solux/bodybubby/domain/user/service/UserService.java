@@ -27,6 +27,7 @@ public class UserService {
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenRepository refreshTokenRepository;
     private final Map<String, String> verificationStore = new ConcurrentHashMap<>();
+    private final org.springframework.data.redis.core.RedisTemplate<String, String> redisTemplate;
 
     /**
      * [회원가입]
@@ -87,8 +88,19 @@ public class UserService {
      */
     @Transactional
     public void logout(String accessToken) {
-        // TODO: Redis를 사용하여 로그아웃된 토큰(Blacklist)을 저장하거나 저장된 리프레시 토큰을 삭제하는 로직을 추가할 수 있습니다.
-        System.out.println("로그아웃 처리된 토큰: " + accessToken);
+        // 1. 토큰에서 유저 ID 추출
+        Long userId = jwtTokenProvider.getUserId(accessToken);
+
+        // 2. Redis에서 리프레시 토큰 삭제 (더 이상 새로운 액세스 토큰 발급 불가)
+        refreshTokenRepository.deleteById(userId);
+
+        // 3. 액세스 토큰 블랙리스트 등록 (남은 시간 동안만 저장하여 현재 토큰 무효화)
+        long expiration = jwtTokenProvider.getExpiration(accessToken);
+        redisTemplate.opsForValue().set(
+                accessToken,
+                "logout",
+                java.time.Duration.ofMillis(expiration)
+        );
     }
 
     /**
