@@ -87,8 +87,7 @@ public class UserService {
      */
     @Transactional
     public void logout(String accessToken) {
-        // TODO: Redis를 사용하여 로그아웃된 토큰(Blacklist)을 저장하거나
-        // 저장된 리프레시 토큰을 삭제하는 로직을 추가할 수 있습니다.
+        // TODO: Redis를 사용하여 로그아웃된 토큰(Blacklist)을 저장하거나 저장된 리프레시 토큰을 삭제하는 로직을 추가할 수 있습니다.
         System.out.println("로그아웃 처리된 토큰: " + accessToken);
     }
 
