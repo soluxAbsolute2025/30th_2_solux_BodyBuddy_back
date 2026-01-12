@@ -5,6 +5,7 @@ import com.solux.bodybubby.domain.user.entity.User;
 import com.solux.bodybubby.domain.user.repository.UserRepository;
 import com.solux.bodybubby.global.exception.BusinessException;
 import com.solux.bodybubby.global.exception.ErrorCode;
+import com.solux.bodybubby.global.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -20,9 +21,8 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    //private final JwtTokenProvider jwtTokenProvider;
+    private final JwtTokenProvider jwtTokenProvider;
     private final Map<String, String> verificationStore = new ConcurrentHashMap<>();
-    // private final JavaMailSender mailSender;
 
     /**
      * [회원가입]
@@ -50,7 +50,7 @@ public class UserService {
      * [로그인]
      *
      * @param dto 로그인 요청 데이터 (UserRequestDto.Login)
-     * @return 발급된 인증 토큰 (예: JWT)
+     * @return 발급된 실제 JWT 인증 토큰
      */
     @Transactional
     public String login(UserRequestDto.Login dto) {
@@ -58,15 +58,13 @@ public class UserService {
         User user = userRepository.findByLoginId(dto.getLoginId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        // 2. 비밀번호 일치 여부 확인
-        // passwordEncoder.matches(평문, 암호화된문자열)
+        // 2. 비밀번호 일치 여부 확인 (BCrypt 암호 대조)
         if (!passwordEncoder.matches(dto.getPassword(), user.getPassword())) {
-            throw new BusinessException(ErrorCode.INVALID_PASSWORD); // 비밀번호 불일치 에러
+            throw new BusinessException(ErrorCode.INVALID_PASSWORD);
         }
 
-        // 3. 로그인 성공 시 토큰 생성 및 반환
-        //return jwtTokenProvider.createAccessToken(user.getId(), user.getLoginId());
-        return "Login Success: " + user.getLoginId();
+        // 3. 로그인 성공 시, 실제 JWT 토큰 생성 및 반환
+        return jwtTokenProvider.createToken(user.getId(), user.getLoginId());
     }
 
     /**
