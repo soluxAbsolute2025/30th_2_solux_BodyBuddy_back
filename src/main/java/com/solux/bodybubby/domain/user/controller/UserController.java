@@ -2,10 +2,12 @@ package com.solux.bodybubby.domain.user.controller;
 
 import com.solux.bodybubby.domain.user.dto.UserRequestDto;
 import com.solux.bodybubby.domain.user.service.UserService;
+import com.solux.bodybubby.global.security.CustomUserDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -74,9 +76,8 @@ public class UserController {
      * [회원 탈퇴] DELETE /api/users
      */
     @DeleteMapping
-    public ResponseEntity<Void> withdraw() {
-        // TODO: 실제로는 토큰에서 userId를 추출해야 합니다. 현재 임시 1L 사용.
-        userService.withdrawUser(1L);
+    public ResponseEntity<Void> withdraw(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        userService.withdrawUser(userDetails.getId()); // 실제 토큰 정보
         return ResponseEntity.noContent().build();
     }
 
@@ -84,9 +85,8 @@ public class UserController {
      * [온보딩 정보 등록] POST /api/users/onboarding
      */
     @PostMapping("/onboarding")
-    public ResponseEntity<String> onboarding(@Valid @RequestBody UserRequestDto.Onboarding dto) {
-        // TODO: 실제로는 토큰에서 userId를 추출해야 합니다. 현재 임시 1L 사용.
-        userService.completeOnboarding(1L, dto);
+    public ResponseEntity<String> onboarding(@AuthenticationPrincipal CustomUserDetails userDetails, @Valid @RequestBody UserRequestDto.Onboarding dto) {
+        userService.completeOnboarding(userDetails.getId(), dto); // 실제 토큰 정보
         return ResponseEntity.ok("온보딩 정보 등록 완료");
     }
 
@@ -94,9 +94,10 @@ public class UserController {
      * [프로필 수정] PATCH /api/users/profile
      */
     @PatchMapping("/profile")
-    public ResponseEntity<String> updateProfile(@Valid @RequestBody UserRequestDto.ProfileUpdate dto) {
-        // TODO: 실제로는 토큰에서 userId를 추출해야 합니다. 현재 임시 1L 사용.
-        userService.updateProfile(1L, dto);
+    public ResponseEntity<String> updateProfile(
+            @AuthenticationPrincipal CustomUserDetails userDetails, // 실제 토큰 정보
+            @Valid @RequestBody UserRequestDto.ProfileUpdate dto) {
+        userService.updateProfile(userDetails.getId(), dto);
         return ResponseEntity.ok("프로필 수정 완료");
     }
 
@@ -104,9 +105,10 @@ public class UserController {
      * [비밀번호 변경] PATCH /api/users/password
      */
     @PatchMapping("/password")
-    public ResponseEntity<String> updatePassword(@Valid @RequestBody UserRequestDto.PasswordUpdate dto) {
-        // TODO: 실제로는 토큰에서 userId를 추출해야 합니다. 현재 임시 1L 사용.
-        userService.updatePassword(1L, dto);
+    public ResponseEntity<String> updatePassword(
+            @AuthenticationPrincipal CustomUserDetails userDetails, // 실제 토큰 정보
+            @Valid @RequestBody UserRequestDto.PasswordUpdate dto) {
+        userService.updatePassword(userDetails.getId(), dto);
         return ResponseEntity.ok("비밀번호 변경 완료");
     }
 }
