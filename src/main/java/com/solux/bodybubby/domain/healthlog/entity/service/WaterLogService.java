@@ -1,6 +1,8 @@
 package com.solux.bodybubby.domain.healthlog.entity.service; // 경로가 맞는지 꼭 확인하세요!
 
+import com.solux.bodybubby.domain.healthlog.entity.MealLog;
 import com.solux.bodybubby.domain.healthlog.entity.WaterLog;
+import com.solux.bodybubby.domain.healthlog.entity.dto.request.MealLogRequest;
 import com.solux.bodybubby.domain.healthlog.entity.dto.request.WaterLogRequestDTO;
 import com.solux.bodybubby.domain.healthlog.entity.dto.response.WaterLogResponseDTO;
 import com.solux.bodybubby.domain.healthlog.entity.repository.WaterLogRepository;
@@ -112,4 +114,34 @@ public class WaterLogService {
         }
         waterLogRepository.delete(waterLog);
     }
+
+    
+
+@Transactional
+public WaterLogResponseDTO updateWaterLog(Long userId, Long waterLogId, WaterLogRequestDTO request) {
+
+    // 1. 기존 객체를 디비에서 가져오기
+    WaterLog waterLog = waterLogRepository.findById(waterLogId)
+            .orElseThrow(() -> new IllegalArgumentException("기록 없음 id=" + waterLogId));
+
+    // 2. 권한 확인
+    if (!waterLog.getUser().getId().equals(userId)) {
+        throw new IllegalArgumentException("수정 권한이 없습니다.");
+    }
+
+    // 3. WaterLog 전용 update 메서드 호출
+    // 식단(MealLog)과 달리 음식 합치기(String.join) 로직이 필요 없음
+    waterLog.update(
+        request.getMlAmount(), 
+        request.getRecordDate()
+    );
+
+    // 4. 수정된 결과 반환 (기존에 있다고 하신 ResponseDTO 활용)
+    return new WaterLogResponseDTO(
+        waterLog.getId(),
+        waterLog.getAmountMl(),
+        waterLog.getLoggedAt()
+    );
 }
+}
+
