@@ -7,7 +7,10 @@ import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
     // 소셜 로그인 시 이메일로 기존 회원을 찾기 위한 메서드
-    Optional<User> findByEmail(String email);
+    static Optional<User> findByEmail(String email) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'findByEmail'");
+    }
 
     // 닉네임 중복확인
     boolean existsByNickname(String nickname);

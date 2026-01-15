@@ -1,9 +1,10 @@
 package com.solux.bodybubby.domain.healthlog.entity.controller;
 
 import com.solux.bodybubby.domain.healthlog.entity.WaterLog;
-import com.solux.bodybubby.domain.healthlog.entity.service.WaterLogService;
 import com.solux.bodybubby.domain.healthlog.entity.dto.request.WaterLogRequestDTO;
 import com.solux.bodybubby.domain.healthlog.entity.dto.response.WaterLogResponseDTO;
+import com.solux.bodybubby.domain.healthlog.entity.service.WaterLogService;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -18,45 +19,36 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class WaterLogController {
 
-    private final WaterLogService waterLogService;
+    // 1. 타입을 WaterLogService(서비스)로 정확히 지정해야함.
+    private final WaterLogService waterLogService; 
 
-    // 1. 수분 기록 추가
-    // POST /api/water-log
     @PostMapping
     public ResponseEntity<String> createWaterLog(@RequestBody WaterLogRequestDTO request) {
+        // 2. 서비스 인스턴스를 통해 호출
         waterLogService.saveWaterLog(request);
         return ResponseEntity.ok("수분 섭취 기록 저장 완료!");
     }
 
-    // 2. 수분 기록 상세 조회
-    // GET /api/water-log/{id}
     @GetMapping("/{waterLogId}")
     public ResponseEntity<WaterLogResponseDTO> getWaterLogDetail(@PathVariable Long waterLogId) {
         return ResponseEntity.ok(waterLogService.getWaterLogDetail(waterLogId));
     }
 
-    // 3. 오늘의 수분 기록 조회 (날짜 선택 가능)
-    // GET /api/water-log/today?date=2025-12-30
     @GetMapping("/today")
     public ResponseEntity<List<WaterLogResponseDTO>> getTodayLogs(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
     ) {
-        // date가 없으면 오늘 날짜(LocalDate.now()) 사용
         LocalDate targetDate = (date != null) ? date : LocalDate.now();
         
-        // userId 1L 고정 (Security 적용 시 수정)
+        // 3. 클래스 이름(WaterLog)이 아닌 서비스 변수(waterLogService)를 사용
         return ResponseEntity.ok(waterLogService.getDailyWaterLogs(1L, targetDate));
     }
 
-    // 4. 주간 수분 섭취량 조회
-    // GET /api/water-log/weekly
     @GetMapping("/weekly")
     public ResponseEntity<Map<LocalDate, Integer>> getWeeklyLogs() {
         return ResponseEntity.ok(waterLogService.getWeeklyWaterLogs(1L));
     }
 
-    // 5. 수분 기록 삭제
-    // DELETE /api/water-log/{id}?userId=1
     @DeleteMapping("/{waterLogId}")
     public ResponseEntity<Void> deleteWaterLog(
             @PathVariable Long waterLogId,
@@ -65,4 +57,19 @@ public class WaterLogController {
         waterLogService.deleteWaterLog(waterLogId, userId);
         return ResponseEntity.ok().build();
     }
+
+  /** [PATCH] 수분 기록 수정 API */
+    @PatchMapping("/{waterLogId}")
+    public ResponseEntity<String> updateWaterLog(
+            @PathVariable Long waterLogId,
+            @RequestParam Long userId,
+            @RequestBody WaterLogRequestDTO request
+    ) {
+        waterLogService.updateWaterLog(userId, waterLogId, request);
+        return ResponseEntity.ok("수분 섭취 기록 수정 완료!");
+    }
+
+
 }
+
+
