@@ -1,5 +1,9 @@
 package com.solux.bodybubby.domain.mypage.service;
 
+import com.solux.bodybubby.domain.badge.entity.Badge;
+import com.solux.bodybubby.domain.badge.repository.BadgeRepository;
+import com.solux.bodybubby.domain.badge.repository.UserBadgeRepository;
+import com.solux.bodybubby.domain.mypage.dto.BadgeCollectionDto;
 import com.solux.bodybubby.domain.mypage.dto.MyPageResponseDto;
 import com.solux.bodybubby.domain.mypage.dto.MyPostDto;
 import com.solux.bodybubby.domain.mypage.dto.PrivacySettingsDto;
@@ -17,7 +21,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,6 +32,8 @@ public class MyPageService {
     private final UserRepository userRepository;
     private final PostRepository postRepository;
     private final PostHashtagRepository postHashtagRepository;
+    private final UserBadgeRepository userBadgeRepository;
+    private final BadgeRepository badgeRepository;
 
     /**
      * [마이페이지 메인 조회] GET /api/mypage
@@ -42,6 +47,19 @@ public class MyPageService {
         int currentExp = user.getCurrentExp();
         LevelTier currentTier = LevelTier.getTier(currentExp);
 
+        // 3. 최근 획득한 뱃지 3개 조회
+        // Repository의 findTop4를 활용하되 명세서(max 3)에 맞춰 3개만 매핑합니다.
+        List<MyPageResponseDto.RecentBadgeDto> recentBadges = userBadgeRepository.findTop4ByUser_IdOrderByAcquiredAtDesc(userId)
+                .stream()
+                .limit(3)
+                .map(ub -> MyPageResponseDto.RecentBadgeDto.builder()
+                        .badgeId(ub.getBadge().getId())
+                        .badgeName(ub.getBadge().getName())
+                        .badgeImageUrl(ub.getBadge().getIconUrl()) // iconUrl 매핑
+                        .acquiredDate(ub.getAcquiredAt().toLocalDate().toString()) // 획득 날짜
+                        .build())
+                .collect(Collectors.toList());
+
         // 3. DTO 조립 및 반환
         return MyPageResponseDto.builder()
                 .userProfile(MyPageResponseDto.UserProfileDto.builder()
@@ -54,7 +72,7 @@ public class MyPageService {
                         .completedChallenges(user.getCompletedChallengesCount())
                         .consecutiveAttendance(user.getConsecutiveAttendance())
                         .build())
-                .recentBadges(new ArrayList<>()) // 뱃지 기능 연동 전까지 빈 리스트 처리
+                .recentBadges(recentBadges)
                 .build();
     }
 
@@ -71,6 +89,36 @@ public class MyPageService {
                 .currentExp(exp)
                 .nextLevelExp((tier == LevelTier.MASTER) ? exp : nextLevelExp)
                 .remainingExp(remainingExp)
+                .build();
+    }
+
+    /**
+     * [뱃지 컬렉션 전체 조회] GET /api/mypage/badges
+     */
+    public BadgeCollectionDto getBadgeCollection(Long userId) {
+        // 1. 시스템의 모든 뱃지 조회
+        List<Badge> allBadges = badgeRepository.findAll();
+
+        // 2. 해당 유저가 획득한 뱃지 ID 리스트 추출
+        List<Long> acquiredBadgeIds = userBadgeRepository.findAllByUser_Id(userId).stream()
+                .map(ub -> ub.getBadge().getId())
+                .collect(Collectors.toList());
+
+        // 3. 전체 뱃지를 돌면서 획득 여부 마킹
+        List<BadgeCollectionDto.BadgeItemDto> badgeItems = allBadges.stream()
+                .map(badge -> BadgeCollectionDto.BadgeItemDto.builder()
+                        .badgeId(badge.getId())
+                        .name(badge.getName())
+                        .description(badge.getDescription())
+                        .imageUrl(badge.getIconUrl())
+                        .isAcquired(acquiredBadgeIds.contains(badge.getId()))
+                        .build())
+                .collect(Collectors.toList());
+
+        return BadgeCollectionDto.builder()
+                .totalBadgeCount(allBadges.size())
+                .acquiredBadgeCount(acquiredBadgeIds.size())
+                .badges(badgeItems)
                 .build();
     }
 
