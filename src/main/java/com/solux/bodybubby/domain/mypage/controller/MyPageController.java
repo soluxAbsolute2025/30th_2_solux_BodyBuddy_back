@@ -1,15 +1,19 @@
 package com.solux.bodybubby.domain.mypage.controller;
 
 import com.solux.bodybubby.domain.mypage.dto.MyPageResponseDto;
+import com.solux.bodybubby.domain.mypage.dto.MyPostDto;
 import com.solux.bodybubby.domain.mypage.dto.PrivacySettingsDto;
 import com.solux.bodybubby.domain.mypage.service.MyPageService;
 import com.solux.bodybubby.global.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -24,13 +28,9 @@ public class MyPageController {
 
     /**
      * [마이페이지 메인 조회] GET /api/mypage
-     * * @param userDetails 현재 인증된 사용자의 정보 (JWT 토큰을 통해 자동 주입)
-     *
-     * @return 마이페이지 프로필, 레벨, 활동 요약 정보를 포함한 응답
      */
     @GetMapping
     public ResponseEntity<MyPageResponseDto> getMyPage(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        // 인증 객체에서 유저 ID를 추출하여 서비스를 호출합니다.
         MyPageResponseDto response = myPageService.getMyPageInfo(userDetails.getId());
         return ResponseEntity.ok(response);
     }
@@ -53,10 +53,60 @@ public class MyPageController {
 
         myPageService.updatePrivacySettings(userDetails.getId(), dto);
 
-        // 명세서 Response 구조 반영
         Map<String, Object> response = new HashMap<>();
         response.put("status", 200);
         response.put("message", "공개 범위 설정이 변경되었습니다.");
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * [내가 쓴 글 목록 조회] GET /api/mypage/posts
+     */
+    @GetMapping("/posts")
+    public ResponseEntity<Map<String, Object>> getMyPosts(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        List<MyPostDto.Response> posts = myPageService.getMyPosts(userDetails.getId());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", 200);
+        response.put("message", "내가 쓴 글 목록 조회 성공");
+        response.put("data", posts);
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * [내가 쓴 글 수정] PATCH /api/mypage/posts/{postId}
+     */
+    @PatchMapping(value = "/posts/{postId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Map<String, Object>> updateMyPost(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long postId,
+            @RequestPart("request") MyPostDto.UpdateRequest request,
+            @RequestPart(value = "image", required = false) MultipartFile image) {
+
+        myPageService.updateMyPost(userDetails.getId(), postId, request, image);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", 200);
+        response.put("message", "게시글이 성공적으로 수정되었습니다.");
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * [내가 쓴 글 삭제] DELETE /api/mypage/posts/{postId}
+     */
+    @DeleteMapping("/posts/{postId}")
+    public ResponseEntity<Map<String, Object>> deleteMyPost(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long postId) {
+
+        myPageService.deleteMyPost(userDetails.getId(), postId);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", 200);
+        response.put("message", "내가 쓴 글이 삭제되었습니다.");
 
         return ResponseEntity.ok(response);
     }
