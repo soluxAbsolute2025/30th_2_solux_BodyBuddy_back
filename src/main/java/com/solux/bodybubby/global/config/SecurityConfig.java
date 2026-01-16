@@ -28,6 +28,37 @@ public class SecurityConfig {
             .logout(logout -> logout
                 .logoutSuccessUrl("/") // 로그아웃 성공 시 메인으로 이동
             );
+    private final JwtTokenProvider jwtTokenProvider;
+    private final CustomUserDetailsService customUserDetailsService;
+    private final org.springframework.data.redis.core.RedisTemplate<String, String> redisTemplate;
+
+    /**
+     * [비밀번호 암호화 빈 등록]
+     * UserService에서 비밀번호를 암호화할 때 이 빈을 사용합니다.
+     */
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+@Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+                .csrf(csrf -> csrf.disable())
+                .headers(headers -> headers.frameOptions(options -> options.disable()))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        
+                        .requestMatchers("/", "/css/**", "/images/**", "/js/**", "/h2-console/**").permitAll()
+                        
+                        // 2. [중요] 로그인과 회원가입 API만 딱 찝어서 허용해야함
+                        .requestMatchers("/api/users/**").permitAll() 
+
+                        // 3. 그 외의 모든 요청(물 마시기 등)은 "인증된 사람만" 가능하도록
+                        .anyRequest().authenticated() 
+                )
+                // ... (필터 설정 등 나머지 코드는 그대로 유지)
+                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, customUserDetailsService, redisTemplate), UsernamePasswordAuthenticationFilter.class)
+                .logout(logout -> logout.logoutSuccessUrl("/"));
 
         return http.build();
     }

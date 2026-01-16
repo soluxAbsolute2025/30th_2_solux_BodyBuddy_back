@@ -1,16 +1,14 @@
-package com.solux.bodybubby.domain.healthlog.entity.service; // 경로가 맞는지 꼭 확인하세요!
+package com.solux.bodybubby.domain.healthlog.entity.service;
 
-import com.solux.bodybubby.domain.healthlog.entity.MealLog;
 import com.solux.bodybubby.domain.healthlog.entity.WaterLog;
-import com.solux.bodybubby.domain.healthlog.entity.dto.request.MealLogRequest;
 import com.solux.bodybubby.domain.healthlog.entity.dto.request.WaterLogRequestDTO;
 import com.solux.bodybubby.domain.healthlog.entity.dto.response.WaterLogResponseDTO;
 import com.solux.bodybubby.domain.healthlog.entity.repository.WaterLogRepository;
 import com.solux.bodybubby.domain.user.entity.User;
 import com.solux.bodybubby.domain.user.repository.UserRepository;
-
-import lombok.Builder;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -18,10 +16,7 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-@Builder
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -33,21 +28,21 @@ public class WaterLogService {
     /**
      * [저장] 수분 섭취 기록하기
      */
-    public void saveWaterLog(WaterLogRequestDTO request) {
-        // 실제 운영시는 SecurityContextHolder에서 userId를 가져와야 하지만, 
-        // 테스트를 위해 일단 1번 유저를 찾습니다.
-        User user = userRepository.findById(1L)
-                .orElseThrow(() -> new IllegalArgumentException("유저가 존재하지 않습니다. DB에 유저가 있는지 확인해주세요."));
+    public void saveWaterLog(Long userId, WaterLogRequestDTO request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("유저 없음"));
 
-        WaterLog waterLog = WaterLog.builder()
+        // DTO의 LocalDate를 LocalDateTime으로 변환 (시간은 현재시간 혹은 00:00)
+        LocalDateTime loggedAt = (request.getRecordDate() != null) 
+                ? request.getRecordDate().atStartOfDay() 
+                : LocalDateTime.now();
+
+        WaterLog log = WaterLog.builder()
                 .user(user)
-                .amountMl(request.getMlAmount()) 
-                // 기록 날짜가 없으면 현재 시간으로 저장하도록 방어 코드 추가
-                .loggedAt(request.getRecordDate() != null ? 
-                          request.getRecordDate().atTime(LocalTime.now()) : LocalDateTime.now()) 
+                .amountMl(request.getMlAmount())
+                .loggedAt(loggedAt)
                 .build();
-
-        waterLogRepository.save(waterLog);
+        waterLogRepository.save(log);
     }
 
     /**
@@ -66,13 +61,12 @@ public class WaterLogService {
     }
 
     /**
-     * [일별 조회] 특정 날짜의 기록 리스트 (today API에서 호출)
+     * [일별 조회]
      */
     @Transactional(readOnly = true)
-    public List<WaterLogResponseDTO> getDailyWaterLogs(Long userId, LocalDate date) {
-        // 해당 날짜의 00:00:00 ~ 23:59:59 범위 설정
-        LocalDateTime start = date.atStartOfDay();
-        LocalDateTime end = date.atTime(LocalTime.MAX);
+    public List<WaterLogResponseDTO> getDailyWaterLogs(Long userId, LocalDate targetDate) {
+        LocalDateTime start = targetDate.atStartOfDay();
+        LocalDateTime end = targetDate.atTime(LocalTime.MAX);
 
         List<WaterLog> logs = waterLogRepository.findAllByUserIdAndLoggedAtBetween(userId, start, end);
 
@@ -86,7 +80,7 @@ public class WaterLogService {
     }
 
     /**
-     * [주간 조회] 최근 7일간 일별 합계
+     * [주간 조회]
      */
     @Transactional(readOnly = true)
     public Map<LocalDate, Integer> getWeeklyWaterLogs(Long userId) {
@@ -103,7 +97,7 @@ public class WaterLogService {
     }
 
     /**
-     * [삭제] 기록 삭제
+     * [삭제]
      */
     public void deleteWaterLog(Long waterLogId, Long userId) {
         WaterLog waterLog = waterLogRepository.findById(waterLogId)
@@ -115,33 +109,34 @@ public class WaterLogService {
         waterLogRepository.delete(waterLog);
     }
 
-    
+    /**
+     * [수정] 여기가 수정되었습니다!
+     */
+    public WaterLogResponseDTO updateWaterLog(Long userId, Long waterLogId, WaterLogRequestDTO request) {
+        // 1. 조회
+        WaterLog waterLog = waterLogRepository.findById(waterLogId)
+                .orElseThrow(() -> new IllegalArgumentException("기록 없음 id=" + waterLogId));
 
-@Transactional
-public WaterLogResponseDTO updateWaterLog(Long userId, Long waterLogId, WaterLogRequestDTO request) {
+        // 2. 권한 확인
+        if (!waterLog.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("수정 권한이 없습니다.");
+        }
 
-    // 1. 기존 객체를 디비에서 가져오기
-    WaterLog waterLog = waterLogRepository.findById(waterLogId)
-            .orElseThrow(() -> new IllegalArgumentException("기록 없음 id=" + waterLogId));
+        // 3. 날짜 타입 변환 (LocalDate -> LocalDateTime)
+        LocalDateTime dateToUpdate = waterLog.getLoggedAt(); // 기본값: 기존 시간 유지
+        if (request.getRecordDate() != null) {
+            // 날짜가 들어왔으면 그 날짜의 00:00:00으로 변경
+            dateToUpdate = request.getRecordDate().atStartOfDay();
+        }
 
-    // 2. 권한 확인
-    if (!waterLog.getUser().getId().equals(userId)) {
-        throw new IllegalArgumentException("수정 권한이 없습니다.");
-    }
+        // 4. 업데이트 실행
+       waterLog.update(request.getMlAmount(), request.getRecordDate());
 
-    // 3. WaterLog 전용 update 메서드 호출
-    // 식단(MealLog)과 달리 음식 합치기(String.join) 로직이 필요 없음
-    waterLog.update(
-        request.getMlAmount(), 
-        request.getRecordDate()
-    );
-
-    // 4. 수정된 결과 반환 (기존에 있다고 하신 ResponseDTO 활용)
+    // 4. 반환
     return new WaterLogResponseDTO(
-        waterLog.getId(),
-        waterLog.getAmountMl(),
-        waterLog.getLoggedAt()
+            waterLog.getId(),
+            waterLog.getAmountMl(),
+            waterLog.getLoggedAt()
     );
 }
 }
-

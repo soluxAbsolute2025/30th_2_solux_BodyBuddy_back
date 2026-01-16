@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Entity
 @Table(name = "water_log")
@@ -27,23 +28,21 @@ public class WaterLog extends HealthLog {
     }
 
     public void update(Integer amountMl, LocalDate recordDate) {
-    if (amountMl == null || amountMl < 0) {
-        throw new IllegalArgumentException("섭취량은 0 이상이어야 합니다.");
+        // 1. 물 양 수정
+        if (amountMl != null) {
+            this.amountMl = amountMl;
+        }
+
+        // 2. 날짜 수정 (날짜가 들어오면, 시간은 기존 시간을 유지함)
+        if (recordDate != null) {
+            // 기존 시간이 있으면 그 시간을 쓰고, 없으면 현재 시간을 씀
+            LocalTime timePart = (this.loggedAt != null) 
+                    ? this.loggedAt.toLocalTime() 
+                    : LocalTime.now();
+            
+            // 입력받은 날짜 + 기존 시간 합치기
+            this.loggedAt = recordDate.atTime(timePart);
+        }
     }
-    this.amountMl = amountMl;
 
-    if (recordDate != null) {
-        // loggedAt이 null인 경우 방어
-        LocalDateTime baseTime =
-                (this.loggedAt != null)
-                ? this.loggedAt
-                : LocalDateTime.now();
-
-        this.loggedAt = recordDate.atTime(baseTime.toLocalTime());
-    }
-}
-
-
-
-    
 }
