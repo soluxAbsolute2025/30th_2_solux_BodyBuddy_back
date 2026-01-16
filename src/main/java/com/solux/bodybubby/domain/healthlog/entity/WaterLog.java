@@ -7,7 +7,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -26,24 +25,12 @@ public class WaterLog extends HealthLog {
         this.amountMl = amountMl;
     }
 
-    public void update(Integer amountMl, LocalDate recordDate) {
-    if (amountMl == null || amountMl < 0) {
-        throw new IllegalArgumentException("섭취량은 0 이상이어야 합니다.");
+    // 3. 비즈니스 로직 (수정 메서드)
+    // Setter를 막 열어두지 말고, 이렇게 명확한 이름의 메서드를 만듭니다.
+    public void updateAmount(Integer amountMl) {
+        if (amountMl == null || amountMl < 0) {
+            throw new IllegalArgumentException("섭취량은 0 이상이어야 합니다.");
+        }
+        this.amountMl = amountMl;
     }
-    this.amountMl = amountMl;
-
-    if (recordDate != null) {
-        // loggedAt이 null인 경우 방어
-        LocalDateTime baseTime =
-                (this.loggedAt != null)
-                ? this.loggedAt
-                : LocalDateTime.now();
-
-        this.loggedAt = recordDate.atTime(baseTime.toLocalTime());
-    }
-}
-
-
-
-    
 }
