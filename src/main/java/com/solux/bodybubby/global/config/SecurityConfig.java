@@ -1,64 +1,55 @@
 package com.solux.bodybubby.global.config;
 
+import com.solux.bodybubby.global.security.CustomUserDetailsService;
+import com.solux.bodybubby.global.security.JwtAuthenticationFilter;
+import com.solux.bodybubby.global.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
-@EnableWebSecurity // 스프링 시큐리티 설정 활성화
+@EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-            .csrf(csrf -> csrf.disable()) // API 서버 위주이므로 CSRF 보안 비활성화
-            .headers(headers -> headers.frameOptions(options -> options.disable())) // H2 콘솔 사용 시 필요
-           .authorizeHttpRequests(auth -> auth
-                // 기존에 있던 개별 경로 대신 /api/** 로 모든 API를 허용합니다.
-            .requestMatchers("/api/**").permitAll()
-            .anyRequest().authenticated()
-            )
-                                
-            .logout(logout -> logout
-                .logoutSuccessUrl("/") // 로그아웃 성공 시 메인으로 이동
-            );
     private final JwtTokenProvider jwtTokenProvider;
     private final CustomUserDetailsService customUserDetailsService;
     private final org.springframework.data.redis.core.RedisTemplate<String, String> redisTemplate;
 
-    /**
-     * [비밀번호 암호화 빈 등록]
-     * UserService에서 비밀번호를 암호화할 때 이 빈을 사용합니다.
-     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-@Bean
+
+    @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())
-                .headers(headers -> headers.frameOptions(options -> options.disable()))
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .csrf(csrf -> csrf.disable()) // API 서버이므로 CSRF 비활성화 (PATCH 등 요청 허용)
+                .headers(headers -> headers.frameOptions(options -> options.disable())) // H2 콘솔 사용 시 필요
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // JWT 사용 시 필수
                 .authorizeHttpRequests(auth -> auth
-                        
+                        // 1. 공통 리소스 및 H2 콘솔 허용
                         .requestMatchers("/", "/css/**", "/images/**", "/js/**", "/h2-console/**").permitAll()
                         
-                        // 2. [중요] 로그인과 회원가입 API만 딱 찝어서 허용해야함
+                        // 2. 로그인/회원가입 API 허용 (다른 사람 작업 내용)
                         .requestMatchers("/api/users/**").permitAll() 
-
-                        // 3. 그 외의 모든 요청(물 마시기 등)은 "인증된 사람만" 가능하도록
+                        
+                        // 3. 테스트 편의를 위해 /api/** 의 일부 경로를 허용하거나, 
+                        // 보안이 필요한 모든 API(식단/수분 등)는 인증된 사용자만 허용
                         .anyRequest().authenticated() 
                 )
-                // ... (필터 설정 등 나머지 코드는 그대로 유지)
+                // JWT 필터를 시큐리티 체인 앞에 추가
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, customUserDetailsService, redisTemplate), UsernamePasswordAuthenticationFilter.class)
-                .logout(logout -> logout.logoutSuccessUrl("/"));
+                .logout(logout -> logout
+                        .logoutSuccessUrl("/")
+                );
 
         return http.build();
     }
