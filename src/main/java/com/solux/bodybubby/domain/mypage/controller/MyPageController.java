@@ -1,5 +1,6 @@
 package com.solux.bodybubby.domain.mypage.controller;
 
+import com.solux.bodybubby.domain.mypage.dto.BadgeCollectionDto;
 import com.solux.bodybubby.domain.mypage.dto.MyPageResponseDto;
 import com.solux.bodybubby.domain.mypage.dto.MyPostDto;
 import com.solux.bodybubby.domain.mypage.dto.PrivacySettingsDto;
@@ -33,6 +34,14 @@ public class MyPageController {
     public ResponseEntity<MyPageResponseDto> getMyPage(@AuthenticationPrincipal CustomUserDetails userDetails) {
         MyPageResponseDto response = myPageService.getMyPageInfo(userDetails.getId());
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * [뱃지 컬렉션 전체 조회] GET /api/mypage/badges
+     */
+    @GetMapping("/badges")
+    public ResponseEntity<BadgeCollectionDto> getBadgeCollection(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ResponseEntity.ok(myPageService.getBadgeCollection(userDetails.getId()));
     }
 
     /**
