@@ -152,6 +152,9 @@ public class MyPageService {
                 dto.isDietPublic(),
                 dto.isSleepPublic()
         );
+
+        // 확실한 반영을 위해 save 호출 추가
+        userRepository.save(user);
     }
 
     /**
