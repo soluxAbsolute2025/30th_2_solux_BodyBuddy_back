@@ -40,9 +40,13 @@ public class SecurityConfig {
                 .headers(headers -> headers.frameOptions(options -> options.disable())) // H2 콘솔 사용 시 필요
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // JWT 사용 시 필수
                 .authorizeHttpRequests(auth -> auth
-                        // 기존에 있던 개별 경로 대신 /api/** 로 모든 API를 허용합니다
-                        .requestMatchers("/", "/css/**", "/images/**", "/js/**", "/h2-console/**", "/api/**"
-                        ).permitAll()
+                        // 1. [우선 순위] 마이페이지는 반드시 로그인이 필요함 (가장 좁은 범위)
+                        .requestMatchers("/api/mypage/**").authenticated()
+
+                        // 2. 그 외의 모든 /api/** 경로는 일단 모두 허용함 (넓은 범위)
+                        .requestMatchers("/", "/css/**", "/images/**", "/js/**", "/h2-console/**", "/api/**").permitAll()
+
+                        // 3. 나머지는 인증 필요
                         .anyRequest().authenticated()
                 )
 
