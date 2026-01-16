@@ -1,6 +1,5 @@
 package com.solux.bodybubby.global.config;
 
-import com.solux.bodybubby.domain.service.CustomOAuth2UserService;
 import com.solux.bodybubby.global.security.CustomUserDetailsService;
 import com.solux.bodybubby.global.security.JwtAuthenticationFilter;
 import com.solux.bodybubby.global.security.JwtTokenProvider;
@@ -15,12 +14,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+
 @Configuration
 @EnableWebSecurity // 스프링 시큐리티 설정 활성화
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final CustomOAuth2UserService customOAuth2UserService;
     private final JwtTokenProvider jwtTokenProvider;
     private final CustomUserDetailsService customUserDetailsService;
     private final org.springframework.data.redis.core.RedisTemplate<String, String> redisTemplate;
@@ -41,20 +40,9 @@ public class SecurityConfig {
                 .headers(headers -> headers.frameOptions(options -> options.disable())) // H2 콘솔 사용 시 필요
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // JWT 사용 시 필수
                 .authorizeHttpRequests(auth -> auth
-                        // 1. 수분 기록 API와 H2 콘솔 등에 대해 누구나 접근 가능하도록 허용
-                        // 2. 유저관련 API를 permitAll()에 추가하여 로그인 없이 접근 가능하게 합니다.
-                        .requestMatchers("/", "/css/**", "/images/**", "/js/**", "/h2-console/**", "/api/water-log/**",
-                                "/api/users/signup",        // 회원가입 허용
-                                "/api/users/login",         // 로그인 허용
-                                "/api/users/logout",          // 로그아웃 허용
-                                "/api/users/check-id",        // 아이디 중복확인 허용
-                                "/api/users/check-nickname",  // 닉네임 중복확인 허용
-                                "/api/users/onboarding",     // 온보딩 정보 등록 허용
-                                "/api/users/profile",        // 프로필 수정 허용
-                                "/api/users/password",       // 비밀번호 변경 허용
-                                "/api/users"                 // 회원탈퇴(DELETE) 허용
+                        // 기존에 있던 개별 경로 대신 /api/** 로 모든 API를 허용합니다
+                        .requestMatchers("/", "/css/**", "/images/**", "/js/**", "/h2-console/**", "/api/**"
                         ).permitAll()
-
                         .anyRequest().authenticated()
                 )
 
@@ -63,16 +51,7 @@ public class SecurityConfig {
 
                 .logout(logout -> logout
                         .logoutSuccessUrl("/") // 로그아웃 성공 시 메인으로 이동
-                )
-
-                // 구글 로그인 관련
-                .oauth2Login(oauth2 -> oauth2
-                        .userInfoEndpoint(userInfo -> userInfo
-                                .userService(customOAuth2UserService) // 구글 로그인 성공 후 처리할 서비스 등록
-                        )
-                        .defaultSuccessUrl("/") // 로그인 성공 시 이동할 기본 페이지
                 );
-
 
         return http.build();
     }
