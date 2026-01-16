@@ -7,7 +7,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
+
 public interface PostRepository extends JpaRepository<Post, Long> {
+
+    // [마이페이지] 특정 유저가 작성한 게시글 중 삭제되지 않은 글을 최신순으로 조회합니다.
+    List<Post> findAllByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(Long userId);
 
     @Query("SELECT p FROM Post p " +
             "JOIN p.postHashtags ph " +
