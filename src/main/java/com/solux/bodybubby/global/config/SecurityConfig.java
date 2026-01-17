@@ -1,8 +1,5 @@
 package com.solux.bodybubby.global.config;
 
-import com.solux.bodybubby.global.security.CustomUserDetailsService;
-import com.solux.bodybubby.global.security.JwtAuthenticationFilter;
-import com.solux.bodybubby.global.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,10 +16,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity // 스프링 시큐리티 설정 활성화
 @RequiredArgsConstructor
 public class SecurityConfig {
-
-    private final JwtTokenProvider jwtTokenProvider;
-    private final CustomUserDetailsService customUserDetailsService;
-    private final org.springframework.data.redis.core.RedisTemplate<String, String> redisTemplate;
 
     /**
      * [비밀번호 암호화 빈 등록]
