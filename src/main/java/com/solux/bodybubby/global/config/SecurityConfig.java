@@ -44,7 +44,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/mypage/**").authenticated()
 
                         // 2. 그 외의 모든 /api/** 경로는 일단 모두 허용함 (넓은 범위)
-                        .requestMatchers("/", "/css/**", "/images/**", "/js/**", "/h2-console/**", "/api/**").permitAll()
+                        .requestMatchers("/", "/css/**", "/images/**", "/js/**", "/h2-console/**", "/api/**",
+                                "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"
+                        ).permitAll()
 
                         // 3. 나머지는 인증 필요
                         .anyRequest().authenticated()
