@@ -28,27 +28,28 @@ import java.util.stream.IntStream;
 @Transactional
 public class AttendanceService {
 
-    private final QuizRepository quizRepository;
+    private final QuizService quizService;
     private final AttendanceRepository attendanceRepository;
+    private final QuizRepository quizRepository;
     private final UserRepository userRepository;
 
-    /**
-     * 1. 오늘의 퀴즈 정보 조회
-     * 반환 구조: { questionId, question, rewardPoint, options: [{id, text}, ...] }
-     */
     @Transactional(readOnly = true)
     public QuizResponseDto getTodayQuiz(Long userId) {
-        LocalDate today = LocalDate.now();
+        // 1. 중복 출석 확인
+        if (attendanceRepository.findByUserIdAndAttendanceDate(userId, LocalDate.now()).isPresent()) {
+            throw new BusinessException(ErrorCode.ALREADY_ATTENDED);
+        }
 
-        Quiz quiz = quizRepository.findByDisplayDate(today)
+        // 2. 랜덤 퀴즈 추출 (QuizRepository의 @Query 사용)
+        Quiz quiz = quizRepository.findRandomQuiz()
                 .orElseThrow(() -> new BusinessException(ErrorCode.QUIZ_NOT_FOUND));
 
-        // DB 콤마 문자열 -> [{id: 1, text: "옵션1"}, ...] 변환
-        List<String> rawOptions = quiz.getOptionsList();
-        List<QuizResponseDto.OptionDto> options = IntStream.range(0, rawOptions.size())
-                .mapToObj(i -> new QuizResponseDto.OptionDto(i + 1, rawOptions.get(i)))
+        // 3. 빌더를 이용한 DTO 변환
+        List<QuizResponseDto.OptionDto> options = IntStream.range(0, quiz.getOptionsList().size())
+                .mapToObj(i -> new QuizResponseDto.OptionDto(i + 1, quiz.getOptionsList().get(i)))
                 .collect(Collectors.toList());
 
+        // QuizResponseDto가 @Builder를 가지고 있어야 합니다.
         return QuizResponseDto.builder()
                 .questionId(quiz.getId())
                 .question(quiz.getQuestion())
@@ -57,10 +58,6 @@ public class AttendanceService {
                 .build();
     }
 
-    /**
-     * 2. 주간 출석 현황 조회
-     * 반환 구조: { attendance: [{date, checked}, ...] }
-     */
     @Transactional(readOnly = true)
     public WeeklyAttendanceDto getWeeklyAttendance(Long userId) {
         LocalDate today = LocalDate.now();
@@ -69,7 +66,6 @@ public class AttendanceService {
         List<Attendance> weeklyAttends = attendanceRepository.findAllByUserIdAndAttendanceDateBetween(
                 userId, monday, monday.plusDays(6));
 
-        // 가지고 계신 WeeklyAttendanceDto.AttendanceDto 구조에 맞게 매핑
         List<WeeklyAttendanceDto.AttendanceDto> attendanceList = IntStream.range(0, 7)
                 .mapToObj(i -> {
                     LocalDate date = monday.plusDays(i);
@@ -82,29 +78,24 @@ public class AttendanceService {
         return new WeeklyAttendanceDto(attendanceList);
     }
 
-    /**
-     * 3. 퀴즈 정답 제출 및 결과 반환
-     * 반환 구조: { correct, earnedPoint }
-     */
     public QuizSolveResponseDto solveQuiz(Long userId, QuizSolveRequest request) {
-        // 중복 출석 체크
         if (attendanceRepository.findByUserIdAndAttendanceDate(userId, LocalDate.now()).isPresent()) {
             throw new BusinessException(ErrorCode.ALREADY_ATTENDED);
         }
 
-        Quiz quiz = quizRepository.findById(request.getQuestionId())
-                .orElseThrow(() -> new BusinessException(ErrorCode.QUIZ_NOT_FOUND));
+        // 해결: QuizSolveRequest가 record이므로 .questionId()로 호출
+        Quiz quiz = quizService.findQuizById(request.questionId());
 
-        // 정답 검증 (optionId는 1부터 시작하므로 -1 해서 인덱스 접근)
         List<String> options = quiz.getOptionsList();
-        String selectedAnswer = options.get(request.getOptionId() - 1);
+        // 해결: .optionId()로 호출
+        String selectedAnswer = options.get(request.optionId() - 1);
         boolean isCorrect = quiz.getAnswer().equals(selectedAnswer);
 
         if (isCorrect) {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-            // 출석 데이터 저장 및 경험치 지급
+            // 해결: Quiz 엔티티에 @Builder가 있어야 작동함
             attendanceRepository.save(Attendance.builder()
                     .user(user)
                     .attendanceDate(LocalDate.now())
@@ -115,7 +106,6 @@ public class AttendanceService {
             return new QuizSolveResponseDto(true, quiz.getRewardExp());
         }
 
-        // 오답일 경우 포인트 0 반환 (다시 시도 가능하도록 에러를 던지지 않음)
         return new QuizSolveResponseDto(false, 0);
     }
 }
