@@ -10,7 +10,7 @@ import com.solux.bodybubby.domain.post.repository.PostHashtagRepository;
 import com.solux.bodybubby.domain.post.repository.PostLikeRepository;
 import com.solux.bodybubby.domain.post.repository.PostRepository;
 import com.solux.bodybubby.domain.user.entity.User;
-import com.solux.bodybubby.domain.user.repository.UserRepositoryTemp;
+import com.solux.bodybubby.domain.user.repository.UserRepository;
 import com.solux.bodybubby.global.exception.BusinessException;
 import com.solux.bodybubby.global.exception.ErrorCode;
 import com.solux.bodybubby.global.service.S3Service;
@@ -29,7 +29,7 @@ import java.util.List;
 public class PostService {
 
     private final PostRepository postRepository;
-    private final UserRepositoryTemp userRepository; // 임시 레포. 추후 변경 예정
+    private final UserRepository userRepository; // 임시 레포. 추후 변경 예정
     private final PostHashtagRepository postHashtagRepository;
     private final HashtagRepository hashtagRepository;
     private final PostLikeRepository postLikeRepository;
