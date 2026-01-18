@@ -40,7 +40,8 @@ public enum ErrorCode {
     NOT_BUDDY_OWNER(HttpStatus.FORBIDDEN, "B007", "버디 삭제 권한이 없습니다."),
 
     // --- 콕찌르기 관련 에러 (PK000) ---
-    ALREADY_POKED_TODAY(HttpStatus.BAD_REQUEST, "PK001", "오늘 이미 콕찌르기를 완료했습니다.");
+    ALREADY_POKED_TODAY(HttpStatus.BAD_REQUEST, "PK001", "오늘 이미 콕찌르기를 완료했습니다."),
+    NOT_BUDDY_RELATION(HttpStatus.FORBIDDEN, "PK002", "버디 상태인 유저만 콕찌르기가 가능합니다.");
 
     private final HttpStatus status;
     private final String code;

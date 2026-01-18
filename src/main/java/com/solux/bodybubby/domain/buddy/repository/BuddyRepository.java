@@ -23,4 +23,10 @@ public interface BuddyRepository extends JpaRepository<Buddy, Long> {
     @Query("SELECT b FROM Buddy b WHERE (b.sender.id = :id1 AND b.receiver.id = :id2) " +
             "OR (b.sender.id = :id2 AND b.receiver.id = :id1)")
     Optional<Buddy> findRelation(@Param("id1") Long id1, @Param("id2") Long id2);
+
+    // 두 유저가 서로 ACCEPTED 상태인지 확인
+    @Query("SELECT COUNT(b) > 0 FROM Buddy b WHERE b.status = com.solux.bodybubby.domain.buddy.entity.BuddyStatus.ACCEPTED " +
+            "AND ((b.sender.id = :id1 AND b.receiver.id = :id2) OR (b.sender.id = :id2 AND b.receiver.id = :id1))")
+    boolean isBuddy(@Param("id1") Long id1, @Param("id2") Long id2);
+
 }
