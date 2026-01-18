@@ -9,4 +9,5 @@ import java.util.List;
 
 public interface MedicationPresetRepository extends JpaRepository<MedicationPreset, Long> {
     List<MedicationPreset> findByUserId(Long userId);
+    
 }

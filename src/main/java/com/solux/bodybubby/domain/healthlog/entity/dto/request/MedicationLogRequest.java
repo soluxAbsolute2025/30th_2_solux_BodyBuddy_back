@@ -1,16 +1,28 @@
 package com.solux.bodybubby.domain.healthlog.entity.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.solux.bodybubby.domain.healthlog.entity.IntakeSlot;
-
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Getter // 이거 하나면 getPresetId(), getIntakeSlot() 자동 생성됨!
-@NoArgsConstructor // JSON 데이터를 받기 위해 필수
+import java.time.LocalDate;
+import java.time.LocalTime;
+
+@Getter // 이게 있어야 getPresetId(), getIntakeDate() 등이 자동 생성됨
+@NoArgsConstructor
 public class MedicationLogRequest {
     
-    private Long medicationId;   // 어떤 약인지 (예: 1번 약)
+    // 1. 서비스에서 getPresetId()로 부르려면 변수명도 presetId여야 함
+    private Long presetId;   
     
-    // ✅ "MORNING" 같은 글자를 자동으로 Enum으로 변환해서 받습니다.
+    // 2. 서비스에서 getIntakeDate()로 부르려면 이 변수가 있어야 함
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd", timezone = "Asia/Seoul")
+    private LocalDate intakeDate;
+    
+    // 3. 서비스에서 getIntakeTime()로 부르려면 이 변수가 있어야 함
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm", timezone = "Asia/Seoul")
+    private LocalTime intakeTime;
+
+    // 4. getIntakeSlot()
     private IntakeSlot intakeSlot; 
 }
