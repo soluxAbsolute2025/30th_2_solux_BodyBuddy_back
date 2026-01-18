@@ -64,7 +64,6 @@ public class PokeService {
     }
 
     public void pokeUser(Long pokerId, Long pokedId) {
-        // 기존 pokeUser 로직 유지...
         if (pokerId.equals(pokedId)) {
             throw new BusinessException(ErrorCode.SELF_BUDDY_REQUEST);
         }
@@ -89,4 +88,4 @@ public class PokeService {
 
         pokeRepository.save(poke);
     }
-}}
+}
