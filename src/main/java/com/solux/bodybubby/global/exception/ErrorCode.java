@@ -28,6 +28,12 @@ public enum ErrorCode {
     IMAGE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "P101", "이미지 업로드에 실패했습니다."),
     COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "P201", "존재하지 않는 댓글입니다."),
 
+    // Attendance & Quiz 관련 에러 코드
+    QUIZ_NOT_FOUND(HttpStatus.NOT_FOUND, "A001", "오늘의 퀴즈가 등록되지 않았습니다."),
+    ALREADY_ATTENDED(HttpStatus.BAD_REQUEST, "A002", "오늘은 이미 출석 체크를 완료했습니다."),
+    WRONG_QUIZ_ANSWER(HttpStatus.BAD_REQUEST, "A003", "퀴즈 정답이 틀렸습니다. 다시 시도해주세요."),
+    INVALID_QUIZ_ACCESS(HttpStatus.FORBIDDEN, "A004", "권한이 없는 퀴즈 접근입니다."),
+
     /* 400 BAD_REQUEST : 잘못된 요청 */
     INVALID_FILE_FORMAT(HttpStatus.BAD_REQUEST, "F001", "지원하지 않는 파일 형식입니다."),
     FILE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "F002", "파일 용량이 제한을 초과했습니다."),
