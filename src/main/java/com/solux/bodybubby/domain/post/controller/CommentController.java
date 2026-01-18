@@ -2,8 +2,10 @@ package com.solux.bodybubby.domain.post.controller;
 
 import com.solux.bodybubby.domain.post.dto.request.CommentRequestDto;
 import com.solux.bodybubby.domain.post.service.CommentService;
+import com.solux.bodybubby.global.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,10 +19,8 @@ public class CommentController {
     public ResponseEntity<Long> createComment(
             @PathVariable Long postId,
             @RequestBody CommentRequestDto dto,
-            Long userId) {
-
-        // 작성자를 userId가 아닌 토큰에서 userId 추출하는 것으로 수정 필요
-        Long commentId = commentService.createComment(postId, dto.getContent(), userId);
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long commentId = commentService.createComment(postId, dto.getContent(), userDetails.getId());
         return ResponseEntity.ok(commentId);
     }
 
@@ -28,10 +28,8 @@ public class CommentController {
     public ResponseEntity<Void> updateComment(
             @PathVariable Long commentId,
             @RequestBody CommentRequestDto dto,
-            Long userId) {
-
-        // 작성자를 userId가 아닌 토큰에서 userId 추출하는 것으로 수정 필요
-        commentService.updateComment(commentId, dto.getContent(), userId);
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        commentService.updateComment(commentId, dto.getContent(), userDetails.getId());
         return ResponseEntity.ok().build();
 
     }
@@ -39,10 +37,8 @@ public class CommentController {
     @DeleteMapping("/comments/{commentId}")
     public ResponseEntity<Void> deleteComment(
             @PathVariable Long commentId,
-            Long userId) {
-
-        // 작성자를 userId가 아닌 토큰에서 userId 추출하는 것으로 수정 필요
-        commentService.deleteComment(commentId, userId);
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        commentService.deleteComment(commentId, userDetails.getId());
         return ResponseEntity.ok().build();
 
     }

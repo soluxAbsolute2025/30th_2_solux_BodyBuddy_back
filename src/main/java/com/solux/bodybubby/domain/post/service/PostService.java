@@ -29,7 +29,7 @@ import java.util.List;
 public class PostService {
 
     private final PostRepository postRepository;
-    private final UserRepository userRepository; // 임시 레포. 추후 변경 예정
+    private final UserRepository userRepository;
     private final PostHashtagRepository postHashtagRepository;
     private final HashtagRepository hashtagRepository;
     private final PostLikeRepository postLikeRepository;
@@ -37,13 +37,9 @@ public class PostService {
 
     // 게시글 생성
     @Transactional
-    public Long createPost(PostRequestDto dto, MultipartFile image,Long currentUserId) {
-        // 임시로 1번 유저를 작성자로 지정
-        User user = userRepository.findById(1L)
-                .orElseThrow(() -> new IllegalArgumentException("테스트용 유저(ID:1)가 DB에 없습니다."));
-
-//        User user = userRepository.findById(currentUserId)
-//                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+    public Long createPost(PostRequestDto dto, MultipartFile image, Long currentUserId) {
+        User user = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // 이미지 S3에 업로드
         String uploadedUrl = null;
@@ -158,9 +154,7 @@ public class PostService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND));
 
-        // 유저 체크 로직 수정 필요
-//        if(!post.getUser().getId().equals(currentUserId)) {
-        if(!post.getId().equals(1L)) {
+        if(!post.getUser().getId().equals(currentUserId)) {
             throw new BusinessException(ErrorCode.DELETE_PERMISSION_DENIED);
         }
 
