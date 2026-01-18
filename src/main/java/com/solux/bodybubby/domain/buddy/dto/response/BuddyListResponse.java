@@ -4,7 +4,7 @@ import java.util.List;
 
 public record BuddyListResponse(
         List<BuddyInfo> myBuddies,
-        List<BuddyRequestInfo> friendRequests
+        List<BuddyRequestInfo> requests
 ) {
     public record BuddyInfo(
             Long userId,
