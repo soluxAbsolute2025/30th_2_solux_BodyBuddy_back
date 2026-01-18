@@ -165,7 +165,7 @@ public class MyPageService {
 
         return posts.stream().map(post -> {
             int level = LevelTier.getTier(post.getUser().getCurrentExp()).ordinal() + 1;
-            String imageUrl = post.getImages().isEmpty() ? null : post.getImages().get(0).getImageUrl();
+            String imageUrl = post.getImageUrl();
             List<String> tags = post.getPostHashtags().stream()
                     .map(ph -> ph.getHashtag().getTagName())
                     .collect(Collectors.toList());
@@ -199,12 +199,19 @@ public class MyPageService {
             throw new BusinessException(ErrorCode.UPDATE_PERMISSION_DENIED);
         }
 
-        post.update(request.getTitle(), request.getContent(), Visibility.valueOf(request.getVisibility()));
-
-        // 이미지 삭제 처리
+        // 1. 이미지 삭제 요청이 온 경우 처리
+        String finalImageUrl = post.getImageUrl();
         if (Boolean.TRUE.equals(request.getIsImageDeleted())) {
-            post.getImages().clear();
+            finalImageUrl = null;
         }
+
+        // 2. 새로운 이미지 파일이 업로드된 경우 (S3 업로드 로직 등이 필요함)
+        if (image != null && !image.isEmpty()) {
+            // finalImageUrl = s3Service.upload(image); // 예시: 실제 업로드 후 URL 할당
+        }
+
+        // 3. 엔티티 update 메서드 호출
+        post.update(request.getTitle(), request.getContent(), Visibility.valueOf(request.getVisibility()), finalImageUrl);
     }
 
     /**
