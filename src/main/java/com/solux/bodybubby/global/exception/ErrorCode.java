@@ -30,6 +30,12 @@ public enum ErrorCode {
     IMAGE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "P101", "이미지 업로드에 실패했습니다."),
     COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "P201", "존재하지 않는 댓글입니다."),
 
+    // Attendance & Quiz 관련 에러 코드
+    QUIZ_NOT_FOUND(HttpStatus.NOT_FOUND, "A001", "오늘의 퀴즈가 등록되지 않았습니다."),
+    ALREADY_ATTENDED(HttpStatus.BAD_REQUEST, "A002", "오늘은 이미 출석 체크를 완료했습니다."),
+    WRONG_QUIZ_ANSWER(HttpStatus.BAD_REQUEST, "A003", "퀴즈 정답이 틀렸습니다. 다시 시도해주세요."),
+    INVALID_QUIZ_ACCESS(HttpStatus.FORBIDDEN, "A004", "권한이 없는 퀴즈 접근입니다."),
+
     // --- 버디(친구) 관련 에러 (B000) ---
     SELF_BUDDY_REQUEST(HttpStatus.BAD_REQUEST, "B001", "자기 자신에게 친구 요청을 보낼 수 없습니다."),
     ALREADY_BUDDY(HttpStatus.CONFLICT, "B002", "이미 버디 관계인 사용자입니다."),
@@ -38,10 +44,18 @@ public enum ErrorCode {
     NOT_BUDDY_RECEIVER(HttpStatus.FORBIDDEN, "B004", "본인에게 온 요청만 처리할 수 있습니다."),
     INVALID_BUDDY_STATUS(HttpStatus.BAD_REQUEST, "B006", "현재 요청 중인 관계에서는 이 작업을 수행할 수 없습니다."),
     NOT_BUDDY_OWNER(HttpStatus.FORBIDDEN, "B007", "버디 삭제 권한이 없습니다."),
-
+  
     // --- 콕찌르기 관련 에러 (PK000) ---
     ALREADY_POKED_TODAY(HttpStatus.BAD_REQUEST, "PK001", "오늘 이미 콕찌르기를 완료했습니다."),
     NOT_BUDDY_RELATION(HttpStatus.FORBIDDEN, "PK002", "버디 상태인 유저만 콕찌르기가 가능합니다.");
+  
+    /* 400 BAD_REQUEST : 잘못된 요청 */
+    INVALID_FILE_FORMAT(HttpStatus.BAD_REQUEST, "F001", "지원하지 않는 파일 형식입니다."),
+    FILE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "F002", "파일 용량이 제한을 초과했습니다."),
+
+    /* 500 INTERNAL_SERVER_ERROR : 서버 오류 */
+    FILE_UPLOAD_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "F003", "이미지 서버 업로드 중 오류가 발생했습니다."),
+    FILE_DELETE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "F004", "이미지 삭제 중 오류가 발생했습니다.");
 
     private final HttpStatus status;
     private final String code;

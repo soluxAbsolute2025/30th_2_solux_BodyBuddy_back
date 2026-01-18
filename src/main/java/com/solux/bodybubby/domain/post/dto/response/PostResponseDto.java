@@ -21,6 +21,7 @@ public class PostResponseDto {
     private String title;
     private String content;
     private String writerNickname;
+    private String imageUrl;
     private Integer likeCount;
     private boolean isLiked;
     private Visibility visibility;
@@ -29,7 +30,6 @@ public class PostResponseDto {
     private LocalDateTime updatedAt;
     private List<String> hashtags;
     private List<CommentResponseDto> comments;
-    // 이미지 관련 추가 필요
 
     public static PostResponseDto fromEntity(Post post, boolean isLiked) {
         List<String> hashtags = post.getPostHashtags().stream()
@@ -41,6 +41,7 @@ public class PostResponseDto {
                 .title(post.getTitle())
                 .content(post.getContent())
                 .writerNickname(post.getUser().getNickname())
+                .imageUrl(post.getImageUrl())
                 .likeCount(post.getLikeCount())
                 .isLiked(isLiked)
                 .visibility(post.getVisibility())
