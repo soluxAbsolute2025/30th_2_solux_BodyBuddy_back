@@ -1,5 +1,6 @@
 package com.solux.bodybubby.global.config;
 
+import com.solux.bodybubby.global.security.CustomAuthenticationEntryPoint;
 import com.solux.bodybubby.global.security.CustomUserDetailsService;
 import com.solux.bodybubby.global.security.JwtAuthenticationFilter;
 import com.solux.bodybubby.global.security.JwtTokenProvider;
@@ -23,6 +24,7 @@ public class SecurityConfig {
     private final JwtTokenProvider jwtTokenProvider;
     private final CustomUserDetailsService customUserDetailsService;
     private final org.springframework.data.redis.core.RedisTemplate<String, String> redisTemplate;
+    private final CustomAuthenticationEntryPoint authenticationEntryPoint;
 
     /**
      * [비밀번호 암호화 빈 등록]
@@ -50,6 +52,11 @@ public class SecurityConfig {
 
                         // 3. 나머지는 인증 필요
                         .anyRequest().authenticated()
+                )
+
+                // [추가] 인증 예외 발생 시 CustomAuthenticationEntryPoint를 사용하도록 설정
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(authenticationEntryPoint)
                 )
 
                 // JWT 필터를 시큐리티 체인 앞에 추가
