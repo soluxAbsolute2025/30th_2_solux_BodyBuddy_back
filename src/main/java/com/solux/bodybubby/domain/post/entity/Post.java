@@ -57,11 +57,11 @@ public class Post extends BaseTimeEntity {
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PostLike> likes = new ArrayList<>();
 
-
-    public void update(String title, String content, Visibility visibility) {
+    public void update(String title, String content, Visibility visibility, String imageUrl) {
         this.title = title;
         this.content = content;
         this.visibility = visibility;
+        this.imageUrl = imageUrl;
     }
 
     public void updateImageUrl(String imageUrl) {

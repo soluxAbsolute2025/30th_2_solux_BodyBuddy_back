@@ -11,6 +11,8 @@ public enum ErrorCode {
     // --- 공통 에러 (C000) ---
     INVALID_INPUT_VALUE(HttpStatus.BAD_REQUEST, "C001", "올바르지 않은 입력값입니다."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "C002", "서버 내부 오류가 발생했습니다."),
+    UNAUTHORIZED(HttpStatus.FORBIDDEN, "AUTH001", "로그인이 필요한 서비스입니다."),
+    INVALID_TOKEN(HttpStatus.BAD_REQUEST, "AUTH002", "유효하지 않은 토큰입니다."),
 
     // --- 유저 관련 에러 (U000) ---
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "U001", "존재하지 않는 사용자입니다."),
@@ -34,6 +36,19 @@ public enum ErrorCode {
     WRONG_QUIZ_ANSWER(HttpStatus.BAD_REQUEST, "A003", "퀴즈 정답이 틀렸습니다. 다시 시도해주세요."),
     INVALID_QUIZ_ACCESS(HttpStatus.FORBIDDEN, "A004", "권한이 없는 퀴즈 접근입니다."),
 
+    // --- 버디(친구) 관련 에러 (B000) ---
+    SELF_BUDDY_REQUEST(HttpStatus.BAD_REQUEST, "B001", "자기 자신에게 친구 요청을 보낼 수 없습니다."),
+    ALREADY_BUDDY(HttpStatus.CONFLICT, "B002", "이미 버디 관계인 사용자입니다."),
+    DUPLICATE_BUDDY_REQUEST(HttpStatus.CONFLICT, "B003", "이미 처리 대기 중인 버디 요청이 있습니다."),
+    BUDDY_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "B004", "존재하지 않는 버디 요청입니다."),
+    NOT_BUDDY_RECEIVER(HttpStatus.FORBIDDEN, "B004", "본인에게 온 요청만 처리할 수 있습니다."),
+    INVALID_BUDDY_STATUS(HttpStatus.BAD_REQUEST, "B006", "현재 요청 중인 관계에서는 이 작업을 수행할 수 없습니다."),
+    NOT_BUDDY_OWNER(HttpStatus.FORBIDDEN, "B007", "버디 삭제 권한이 없습니다."),
+  
+    // --- 콕찌르기 관련 에러 (PK000) ---
+    ALREADY_POKED_TODAY(HttpStatus.BAD_REQUEST, "PK001", "오늘 이미 콕찌르기를 완료했습니다."),
+    NOT_BUDDY_RELATION(HttpStatus.FORBIDDEN, "PK002", "버디 상태인 유저만 콕찌르기가 가능합니다.");
+  
     /* 400 BAD_REQUEST : 잘못된 요청 */
     INVALID_FILE_FORMAT(HttpStatus.BAD_REQUEST, "F001", "지원하지 않는 파일 형식입니다."),
     FILE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "F002", "파일 용량이 제한을 초과했습니다."),
