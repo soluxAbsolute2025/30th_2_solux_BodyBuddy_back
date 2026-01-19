@@ -1,39 +1,34 @@
 package com.solux.bodybubby.domain.healthlog.entity;
 
-import com.solux.bodybubby.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.time.LocalDateTime;
 @Entity
 @Getter
-@Builder           
+@Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor 
+@AllArgsConstructor
 @Table(name = "medication_preset")
 public class MedicationPreset {
-    
+
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private Long userId;
-    
+
     private String name;
-    
-    private String intakeTiming;
-    
+
+    private String intakeTiming; // 복용 타이밍 (식후 30분 등)
+
     private boolean takeMorning;
     private boolean takeLunch;
     private boolean takeDinner;
 
-    // 수정 편의 메서드 (서비스에서 호출)
+    // 수정 편의 메서드
     public void update(String name, String intakeTiming, boolean takeMorning, boolean takeLunch, boolean takeDinner) {
         this.name = name;
         this.intakeTiming = intakeTiming;

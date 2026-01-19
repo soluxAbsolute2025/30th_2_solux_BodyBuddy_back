@@ -2,25 +2,26 @@ package com.solux.bodybubby.domain.healthlog.entity.service;
 
 import com.solux.bodybubby.domain.healthlog.entity.MedicationPreset;
 import com.solux.bodybubby.domain.healthlog.entity.dto.request.MedicationPresetRequest;
+import com.solux.bodybubby.domain.healthlog.entity.dto.response.MedicationPresetResponse;
 import com.solux.bodybubby.domain.healthlog.entity.repository.MedicationPresetRepository;
-
-import lombok.RequiredArgsConstructor; // Builder 제거함
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor // 👈 Service는 이것만 있으면 됩니다!
+@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class MedicationPresetService {
 
     private final MedicationPresetRepository presetRepository;
 
-    // ✅ 1. 약 추가하기
+    // 1. 등록
     @Transactional
     public Long createPreset(Long userId, MedicationPresetRequest request) {
-        MedicationPreset preset = MedicationPreset.builder() // 이제 오류 안 날 겁니다!
+        MedicationPreset preset = MedicationPreset.builder()
                 .userId(userId)
                 .name(request.getName())
                 .intakeTiming(request.getTiming())
@@ -28,28 +29,26 @@ public class MedicationPresetService {
                 .takeLunch(request.isTakeLunch())
                 .takeDinner(request.isTakeDinner())
                 .build();
-
         return presetRepository.save(preset).getId();
     }
 
-    // ✅ 2. 내 약 목록 조회
-    public List<MedicationPreset> getMyPresets(Long userId) {
-        return presetRepository.findByUserId(userId);
-    }
-    
-    // ✅ 3. 삭제
-    @Transactional
-    public void deletePreset(Long presetId) {
-        presetRepository.deleteById(presetId);
+    // 2. 조회
+    public List<MedicationPresetResponse> getMyPresets(Long userId) {
+        return presetRepository.findByUserId(userId).stream()
+                .map(MedicationPresetResponse::from)
+                .collect(Collectors.toList());
     }
 
-    // ✅ 4. 수정 (괄호 안으로 잘 들어왔습니다)
+    // 3. 수정
     @Transactional
-    public void updatePreset(Long presetId, MedicationPresetRequest request) {
+    public void updatePreset(Long userId, Long presetId, MedicationPresetRequest request) {
         MedicationPreset preset = presetRepository.findById(presetId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 약입니다. id=" + presetId));
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 약입니다."));
 
-        // Entity에 만들어둔 update 메서드 사용
+        if (!preset.getUserId().equals(userId)) {
+            throw new IllegalArgumentException("본인의 약 정보만 수정할 수 있습니다.");
+        }
+
         preset.update(
                 request.getName(),
                 request.getTiming(),
@@ -58,4 +57,17 @@ public class MedicationPresetService {
                 request.isTakeDinner()
         );
     }
-} 
+
+    // 4. 삭제
+    @Transactional
+    public void deletePreset(Long userId, Long presetId) {
+        MedicationPreset preset = presetRepository.findById(presetId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 약입니다."));
+
+        if (!preset.getUserId().equals(userId)) {
+            throw new IllegalArgumentException("본인의 약 정보만 삭제할 수 있습니다.");
+        }
+        
+        presetRepository.delete(preset);
+    }
+}

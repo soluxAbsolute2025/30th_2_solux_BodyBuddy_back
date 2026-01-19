@@ -1,13 +1,15 @@
 package com.solux.bodybubby.domain.healthlog.entity;
 
 import com.solux.bodybubby.domain.user.entity.User;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 @Entity
+@Getter
+@NoArgsConstructor
 @Table(name = "sleep_log")
 public class SleepLog extends HealthLog {
 
@@ -23,18 +25,17 @@ public class SleepLog extends HealthLog {
     @Column(name = "quality")
     private String quality;
 
-    protected SleepLog() {
+    // 생성자
+    public SleepLog(User user, LocalDateTime loggedAt, LocalDateTime sleepTime, LocalDateTime wakeTime, Integer totalMinutes, String quality) {
+        super(user, loggedAt);
+        this.sleepTime = sleepTime;
+        this.wakeTime = wakeTime;
+        this.totalMinutes = totalMinutes;
+        this.quality = quality;
     }
 
-    public SleepLog(
-            User user,
-            LocalDateTime loggedAt,
-            LocalDateTime sleepTime,
-            LocalDateTime wakeTime,
-            Integer totalMinutes,
-            String quality
-    ) {
-        super(user, loggedAt);
+    // ✅ 이 메서드가 있어야 Service에서 update 에러가 안 납니다!
+    public void update(LocalDateTime sleepTime, LocalDateTime wakeTime, Integer totalMinutes, String quality) {
         this.sleepTime = sleepTime;
         this.wakeTime = wakeTime;
         this.totalMinutes = totalMinutes;
