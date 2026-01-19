@@ -5,7 +5,7 @@ import com.solux.bodybubby.domain.post.entity.PostLike;
 import com.solux.bodybubby.domain.post.repository.PostLikeRepository;
 import com.solux.bodybubby.domain.post.repository.PostRepository;
 import com.solux.bodybubby.domain.user.entity.User;
-import com.solux.bodybubby.domain.user.repository.UserRepositoryTemp;
+import com.solux.bodybubby.domain.user.repository.UserRepository;
 import com.solux.bodybubby.global.exception.BusinessException;
 import com.solux.bodybubby.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,7 @@ public class LikeService {
 
     private final PostLikeRepository postLikeRepository;
     private final PostRepository postRepository;
-    private final UserRepositoryTemp userRepository;
+    private final UserRepository userRepository;
 
     public boolean toggleLike(Long postId, Long userId) {
         Post post = postRepository.findById(postId)

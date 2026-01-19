@@ -1,5 +1,6 @@
 package com.solux.bodybubby.global.config;
 
+import com.solux.bodybubby.global.security.CustomAuthenticationEntryPoint;
 import com.solux.bodybubby.global.security.CustomUserDetailsService;
 import com.solux.bodybubby.global.security.JwtAuthenticationFilter;
 import com.solux.bodybubby.global.security.JwtTokenProvider;
@@ -22,6 +23,7 @@ public class SecurityConfig {
     private final JwtTokenProvider jwtTokenProvider;
     private final CustomUserDetailsService customUserDetailsService;
     private final org.springframework.data.redis.core.RedisTemplate<String, String> redisTemplate;
+    private final CustomAuthenticationEntryPoint authenticationEntryPoint;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -35,20 +37,24 @@ public class SecurityConfig {
                 .headers(headers -> headers.frameOptions(options -> options.disable()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // 1. 정적 리소스 및 H2 콘솔 허용
-                        .requestMatchers("/", "/css/**", "/images/**", "/js/**", "/h2-console/**").permitAll()
+                        // 1. [우선 순위] 마이페이지는 반드시 로그인이 필요함 (가장 좁은 범위)
+                        .requestMatchers("/api/mypage/**").authenticated()
 
-                        // 2. 일단 UserController 내부의 "인증 불필요" 엔드포인트만 직접 지정해서 허용
-                        .requestMatchers(
-                                "/api/users/signup",         // 회원가입
-                                "/api/users/login",          // 로그인
-                                "/api/users/check-id",       // 아이디 중복확인
-                                "/api/users/check-nickname"  // 닉네임 중복확인
+                        // 2. 그 외의 모든 /api/** 경로는 일단 모두 허용함 (넓은 범위)
+                        .requestMatchers("/", "/css/**", "/images/**", "/js/**", "/h2-console/**", "/api/**",
+                                "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"
                         ).permitAll()
 
-                        // 3. 나머지 모든 요청(온보딩, 프로필수정, 수면/식단/수분 기록 등)은 "로그인 필수"
+                        // 3. 나머지는 인증 필요
                         .anyRequest().authenticated()
                 )
+
+                // [추가] 인증 예외 발생 시 CustomAuthenticationEntryPoint를 사용하도록 설정
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(authenticationEntryPoint)
+                )
+
+                // JWT 필터를 시큐리티 체인 앞에 추가
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, customUserDetailsService, redisTemplate), UsernamePasswordAuthenticationFilter.class)
                 .logout(logout -> logout
                         .logoutSuccessUrl("/")

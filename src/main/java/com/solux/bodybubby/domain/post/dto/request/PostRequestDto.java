@@ -16,6 +16,5 @@ public class PostRequestDto {
     private String content;
     private Visibility visibility;
     private List<String> hashtags;
-
-   // 이미지 관련 추가 필요
+    private Boolean imageDeleted; // 게시물 수정 시 이미지 삭제했는지 여부
 }
