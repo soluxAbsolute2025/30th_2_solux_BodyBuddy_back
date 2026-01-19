@@ -47,7 +47,7 @@ public enum ErrorCode {
   
     // --- 콕찌르기 관련 에러 (PK000) ---
     ALREADY_POKED_TODAY(HttpStatus.BAD_REQUEST, "PK001", "오늘 이미 콕찌르기를 완료했습니다."),
-    NOT_BUDDY_RELATION(HttpStatus.FORBIDDEN, "PK002", "버디 상태인 유저만 콕찌르기가 가능합니다.");
+    NOT_BUDDY_RELATION(HttpStatus.FORBIDDEN, "PK002", "버디 상태인 유저만 콕찌르기가 가능합니다."),
   
     /* 400 BAD_REQUEST : 잘못된 요청 */
     INVALID_FILE_FORMAT(HttpStatus.BAD_REQUEST, "F001", "지원하지 않는 파일 형식입니다."),
