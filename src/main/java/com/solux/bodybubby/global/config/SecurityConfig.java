@@ -1,5 +1,6 @@
 package com.solux.bodybubby.global.config;
 
+import com.solux.bodybubby.global.security.CustomAuthenticationEntryPoint;
 import com.solux.bodybubby.global.security.CustomUserDetailsService;
 import com.solux.bodybubby.global.security.JwtAuthenticationFilter;
 import com.solux.bodybubby.global.security.JwtTokenProvider;
@@ -22,6 +23,7 @@ public class SecurityConfig {
     private final JwtTokenProvider jwtTokenProvider;
     private final CustomUserDetailsService customUserDetailsService;
     private final org.springframework.data.redis.core.RedisTemplate<String, String> redisTemplate;
+    private final CustomAuthenticationEntryPoint authenticationEntryPoint;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -31,20 +33,27 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // API 서버이므로 CSRF 비활성화 (PATCH 등 요청 허용)
-                .headers(headers -> headers.frameOptions(options -> options.disable())) // H2 콘솔 사용 시 필요
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // JWT 사용 시 필수
+                .csrf(csrf -> csrf.disable())
+                .headers(headers -> headers.frameOptions(options -> options.disable()))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // 1. 공통 리소스 및 H2 콘솔 허용
-                        .requestMatchers("/", "/css/**", "/images/**", "/js/**", "/h2-console/**").permitAll()
-                        
-                        // 2. 로그인/회원가입 API 허용 (다른 사람 작업 내용)
-                        .requestMatchers("/api/users/**").permitAll() 
-                        
-                        // 3. 테스트 편의를 위해 /api/** 의 일부 경로를 허용하거나, 
-                        // 보안이 필요한 모든 API(식단/수분 등)는 인증된 사용자만 허용
-                        .anyRequest().authenticated() 
+                        // 1. [우선 순위] 마이페이지는 반드시 로그인이 필요함 (가장 좁은 범위)
+                        .requestMatchers("/api/mypage/**").authenticated()
+
+                        // 2. 그 외의 모든 /api/** 경로는 일단 모두 허용함 (넓은 범위)
+                        .requestMatchers("/", "/css/**", "/images/**", "/js/**", "/h2-console/**", "/api/**",
+                                "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"
+                        ).permitAll()
+
+                        // 3. 나머지는 인증 필요
+                        .anyRequest().authenticated()
                 )
+
+                // [추가] 인증 예외 발생 시 CustomAuthenticationEntryPoint를 사용하도록 설정
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(authenticationEntryPoint)
+                )
+
                 // JWT 필터를 시큐리티 체인 앞에 추가
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, customUserDetailsService, redisTemplate), UsernamePasswordAuthenticationFilter.class)
                 .logout(logout -> logout

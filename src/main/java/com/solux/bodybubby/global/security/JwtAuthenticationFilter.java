@@ -22,18 +22,26 @@ public class JwtAuthenticationFilter extends GenericFilterBean {
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-        // 1. 헤더에서 토큰 추출
         String token = resolveToken((HttpServletRequest) request);
-        // 2. 토큰 유효성 검사
-        if (token != null && jwtTokenProvider.validateToken(token)) {
-            // 로그아웃 시 Redis에 "logout" 상태로 저장된 토큰이 있는지 확인
-            String isLogout = redisTemplate.opsForValue().get(token);
-            if (isLogout == null) {
-                // 블랙리스트에 없다면 정상적인 유저로 판단하여 인증 객체 생성
-                UserDetails userDetails = userDetailsService.loadUserByUsername(jwtTokenProvider.getUsername(token));
-                SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities()));
+
+        if (token != null) {
+            // 1. 먼저 토큰 자체의 유효성(만료, 변조 등)을 검사
+            if (jwtTokenProvider.validateToken(token)) {
+                // 2. 유효하다면 블랙리스트(로그아웃 여부) 확인
+                String isLogout = redisTemplate.opsForValue().get(token);
+                if (isLogout == null) {
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(jwtTokenProvider.getUsername(token));
+                    SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities()));
+                } else {
+                    // 로그아웃된 토큰인 경우
+                    request.setAttribute("exception", "INVALID_TOKEN");
+                }
+            } else {
+                // 3. 토큰 자체가 유효하지 않은 경우 (이 부분이 누락되어 있었습니다)
+                request.setAttribute("exception", "INVALID_TOKEN");
             }
         }
+        // 토큰이 null이면 아무것도 세팅 안 함 -> SecurityConfig에 의해 401(AUTH001) 발생
         chain.doFilter(request, response);
     }
 
