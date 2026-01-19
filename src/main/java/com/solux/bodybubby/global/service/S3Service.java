@@ -3,7 +3,10 @@ package com.solux.bodybubby.global.service;
 import com.solux.bodybubby.global.exception.BusinessException;
 import com.solux.bodybubby.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -15,10 +18,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.UUID;
 
+
 @Service
 @RequiredArgsConstructor
 public class S3Service {
 
+    @Autowired
     private final S3Client s3Client; // AmazonS3 대신 S3Client 사용
 
     @Value("${spring.cloud.aws.s3.bucket}") // prefix 주의: spring. 추가
@@ -74,4 +79,5 @@ public class S3Service {
 
         s3Client.deleteObject(deleteObjectRequest);
     }
+    
 }

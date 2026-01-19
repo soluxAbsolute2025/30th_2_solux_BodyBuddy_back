@@ -121,7 +121,8 @@ public class PostService {
             post.updateImageUrl(null);
         }
 
-        post.update(dto.getTitle(), dto.getContent(), dto.getVisibility());
+        // 4번째 인자(이미지URL) 자리에 일단 null을 넣어줍니다.
+        post.update(dto.getTitle(), dto.getContent(), dto.getVisibility(), null);
 
         updatePostHashtags(post, dto.getHashtags());
 
