@@ -5,11 +5,16 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 public interface SleepLogRepository extends JpaRepository<SleepLog, Long> {
+
+    // 수면 시간 컬럼명이 'hours'인지 'totalHours'인지 확인 필요 (여기선 totalHours 가정)
+    @Query("SELECT SUM(s.totalHours) FROM SleepLog s WHERE s.user.id = :userId AND s.date = :date")
+    Integer sumTotalHoursByUserIdAndDate(@Param("userId") Long userId, @Param("date") LocalDate date);
 
     // ✅ 1. 특정 날짜의 수면 기록 조회 (Service의 getSleepLog에서 사용)
     // loggedAt이 00:00:00 ~ 23:59:59 사이인 기록을 찾음

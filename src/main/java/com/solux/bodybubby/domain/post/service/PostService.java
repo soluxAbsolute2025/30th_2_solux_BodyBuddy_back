@@ -121,7 +121,8 @@ public class PostService {
             post.updateImageUrl(null);
         }
 
-        post.update(dto.getTitle(), dto.getContent(), dto.getVisibility());
+        
+    post.update(dto.getTitle(), dto.getContent(), dto.getVisibility(), null);
 
         updatePostHashtags(post, dto.getHashtags());
 
