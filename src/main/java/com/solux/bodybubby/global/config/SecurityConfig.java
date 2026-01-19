@@ -15,9 +15,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-
 @Configuration
-@EnableWebSecurity // 스프링 시큐리티 설정 활성화
+@EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -26,10 +25,6 @@ public class SecurityConfig {
     private final org.springframework.data.redis.core.RedisTemplate<String, String> redisTemplate;
     private final CustomAuthenticationEntryPoint authenticationEntryPoint;
 
-    /**
-     * [비밀번호 암호화 빈 등록]
-     * UserService에서 비밀번호를 암호화할 때 이 빈을 사용합니다.
-     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -38,9 +33,9 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // API 서버 위주이므로 CSRF 보안 비활성화
-                .headers(headers -> headers.frameOptions(options -> options.disable())) // H2 콘솔 사용 시 필요
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // JWT 사용 시 필수
+                .csrf(csrf -> csrf.disable())
+                .headers(headers -> headers.frameOptions(options -> options.disable()))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         // 1. [우선 순위] 마이페이지는 반드시 로그인이 필요함 (가장 좁은 범위)
                         .requestMatchers("/api/mypage/**").authenticated()
@@ -61,9 +56,8 @@ public class SecurityConfig {
 
                 // JWT 필터를 시큐리티 체인 앞에 추가
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, customUserDetailsService, redisTemplate), UsernamePasswordAuthenticationFilter.class)
-
                 .logout(logout -> logout
-                        .logoutSuccessUrl("/") // 로그아웃 성공 시 메인으로 이동
+                        .logoutSuccessUrl("/")
                 );
 
         return http.build();

@@ -1,25 +1,19 @@
 package com.solux.bodybubby.domain.healthlog.entity.controller;
 
-import java.util.List;
-
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
 import com.solux.bodybubby.domain.healthlog.entity.dto.request.MealLogRequest;
 import com.solux.bodybubby.domain.healthlog.entity.dto.response.MealLogResponse;
 import com.solux.bodybubby.domain.healthlog.entity.service.MealLogService;
-
-
+import com.solux.bodybubby.global.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/meal-log")
 @RequiredArgsConstructor
@@ -27,45 +21,45 @@ public class MealLogController {
 
     private final MealLogService mealLogService;
 
-    // 식단 기록 생성
-    @PostMapping
+    /** 1. 식단 기록 생성 */
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> addMealLog(
-            @RequestHeader("X-USER-ID") Long userId,
-            @RequestBody MealLogRequest request) {
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestPart("request") MealLogRequest request,
+            @RequestPart(value = "image", required = false) MultipartFile image) {
 
-        mealLogService.saveMealLog(userId, request);
-        return ResponseEntity.ok("식단 기록 성공!");
+        mealLogService.saveMealLog(userDetails.getId(), request, image);
+        return ResponseEntity.status(HttpStatus.CREATED).body("식단 기록 성공!");
     }
 
-    // 특정 날짜 식단 조회
+    /** 2. 특정 날짜 식단 조회 */
     @GetMapping
     public ResponseEntity<List<MealLogResponse>> getMealLogs(
-            @RequestHeader("X-USER-ID") Long userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam("date") String date) {
 
-        return ResponseEntity.ok(
-                mealLogService.getMealLogsByDate(userId, date)
-        );
+        return ResponseEntity.ok(mealLogService.getMealLogsByDate(userDetails.getId(), date));
     }
 
-    // 식단 기록 수정
-    @PatchMapping("/{id}")
+    /** 3. 식단 수정 (이미지 포함) */
+    @PatchMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> updateMealLog(
-            @RequestHeader("X-USER-ID") Long userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable("id") Long id,
-            @RequestBody MealLogRequest request) {
-
-        mealLogService.updateMealLog(userId, id, request);
+            @RequestPart("request") MealLogRequest request,
+            @RequestPart(value = "image", required = false) MultipartFile image) {
+        
+        mealLogService.updateMealLog(userDetails.getId(), id, request, image);
         return ResponseEntity.ok("식단이 수정되었습니다.");
     }
 
-    // 식단 기록 삭제
+    /** 4. 식단 삭제 (새로 추가됨) */
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteMealLog(
-            @RequestHeader("X-USER-ID") Long userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable("id") Long id) {
 
-        mealLogService.deleteMealLog(userId, id);
+        mealLogService.deleteMealLog(userDetails.getId(), id);
         return ResponseEntity.ok("식단 기록이 삭제되었습니다.");
     }
 }

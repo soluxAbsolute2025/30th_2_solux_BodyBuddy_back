@@ -1,16 +1,17 @@
 package com.solux.bodybubby.domain.healthlog.entity;
 
-import com.solux.bodybubby.domain.user.entity.User;import jakarta.persistence.*;
+import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Entity
 @Getter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor // Builder를 쓰려면 이게 필수입니다!
+@AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
 @Table(name = "medication_log")
 public class MedicationLog {
@@ -18,17 +19,18 @@ public class MedicationLog {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY) // 성능 최적화
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "preset_id")
-    private MedicationPreset preset; // 어떤 약을 먹었는지
+    private MedicationPreset preset;
 
-    private LocalDate intakeDate;    // 언제? (2026-01-14)
+    private LocalDate intakeDate;    // 날짜 (2025-12-23)
     
-    // ✅ 아침/점심/저녁 중 언제 먹은 건지 구분
+    private LocalTime intakeTime;    // ✅ 추가됨: 시간 (08:30)
+
     @Enumerated(EnumType.STRING)
-    private IntakeSlot intakeSlot;   // MORNING, LUNCH, DINNER
+    private IntakeSlot intakeSlot;   // 아침/점심/저녁
     
-    private boolean isTaken;         // 복용 여부 (true)
+    private boolean isTaken;
 
     public void cancelIntake() {
         this.isTaken = false;

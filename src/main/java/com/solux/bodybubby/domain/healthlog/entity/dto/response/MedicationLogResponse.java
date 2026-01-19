@@ -1,30 +1,27 @@
 package com.solux.bodybubby.domain.healthlog.entity.dto.response;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.solux.bodybubby.domain.healthlog.entity.IntakeSlot;
 import com.solux.bodybubby.domain.healthlog.entity.MedicationLog;
-
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
-@Getter
-@NoArgsConstructor
-public class MedicationLogResponse {
-    private Long id;
-    private Long medicationId; // 약 ID (Preset ID)
-    private boolean isTaken;
-    private LocalDate date;
-    private IntakeSlot slot;
 
-    // 엔티티를 받아서 DTO로 변환하는 생성자
+import java.time.LocalDate;
+
+@Getter
+public class MedicationLogResponse {
+
+    private Long id;              // 로그 ID (예: 6)
+    private Long medicationId;    // 약 ID (예: 4)
+    private String medicationName; // ✅ 추가됨! (예: "종합비타민")
+    private LocalDate date;       // 날짜
+    private IntakeSlot slot;      // 시간대 (MORNING)
+    private boolean taken;        // 복용 여부
+
     public MedicationLogResponse(MedicationLog log) {
         this.id = log.getId();
-        this.medicationId = log.getPreset().getId(); // 여기서 Proxy가 벗겨짐!
-        this.isTaken = log.isTaken(); 
+        this.medicationId = log.getPreset().getId();
+        this.medicationName = log.getPreset().getName(); // ✅ 여기서 이름을 꺼내옵니다!
         this.date = log.getIntakeDate();
         this.slot = log.getIntakeSlot();
+        this.taken = log.isTaken();
     }
 }
