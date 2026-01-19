@@ -31,21 +31,24 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // API 서버이므로 CSRF 비활성화 (PATCH 등 요청 허용)
-                .headers(headers -> headers.frameOptions(options -> options.disable())) // H2 콘솔 사용 시 필요
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // JWT 사용 시 필수
+                .csrf(csrf -> csrf.disable())
+                .headers(headers -> headers.frameOptions(options -> options.disable()))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // 1. 공통 리소스 및 H2 콘솔 허용
+                        // 1. 정적 리소스 및 H2 콘솔 허용
                         .requestMatchers("/", "/css/**", "/images/**", "/js/**", "/h2-console/**").permitAll()
-                        
-                        // 2. 로그인/회원가입 API 허용 (다른 사람 작업 내용)
-                        .requestMatchers("/api/users/**").permitAll() 
-                        
-                        // 3. 테스트 편의를 위해 /api/** 의 일부 경로를 허용하거나, 
-                        // 보안이 필요한 모든 API(식단/수분 등)는 인증된 사용자만 허용
-                        .anyRequest().authenticated() 
+
+                        // 2. 일단 UserController 내부의 "인증 불필요" 엔드포인트만 직접 지정해서 허용
+                        .requestMatchers(
+                                "/api/users/signup",         // 회원가입
+                                "/api/users/login",          // 로그인
+                                "/api/users/check-id",       // 아이디 중복확인
+                                "/api/users/check-nickname"  // 닉네임 중복확인
+                        ).permitAll()
+
+                        // 3. 나머지 모든 요청(온보딩, 프로필수정, 수면/식단/수분 기록 등)은 "로그인 필수"
+                        .anyRequest().authenticated()
                 )
-                // JWT 필터를 시큐리티 체인 앞에 추가
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, customUserDetailsService, redisTemplate), UsernamePasswordAuthenticationFilter.class)
                 .logout(logout -> logout
                         .logoutSuccessUrl("/")
