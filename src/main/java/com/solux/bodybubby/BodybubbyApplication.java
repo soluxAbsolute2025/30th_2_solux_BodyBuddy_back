@@ -8,12 +8,9 @@ import org.springframework.context.annotation.FilterType;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.data.redis.repository.configuration.EnableRedisRepositories;
 
-// 1. S3 관련 자동 설정을 제외하도록 통합
-@SpringBootApplication(exclude = {
-    io.awspring.cloud.autoconfigure.s3.S3AutoConfiguration.class,
-    io.awspring.cloud.autoconfigure.core.CredentialsProviderAutoConfiguration.class
-})
-// 2. JPA 설정: Redis 전용인 RefreshTokenRepository 제외
+// @SpringBootApplication 어노테이션에 DB 관련 자동 설정을 제외하는 옵션을 추가합니다.
+@SpringBootApplication
+// 1. JPA 레포지토리 설정: 모든 레포지토리를 스캔하되, Redis 전용인 RefreshTokenRepository는 제외합니다.
 @EnableJpaRepositories(
         basePackages = "com.solux.bodybubby",
         excludeFilters = @ComponentScan.Filter(
@@ -21,7 +18,7 @@ import org.springframework.data.redis.repository.configuration.EnableRedisReposi
                 classes = RefreshTokenRepository.class
         )
 )
-// 3. Redis 설정: RefreshTokenRepository만 포함
+// 2. Redis 레포지토리 설정: RefreshTokenRepository만 Redis용으로 인식하도록 명시합니다.
 @EnableRedisRepositories(
         basePackages = "com.solux.bodybubby",
         includeFilters = @ComponentScan.Filter(
@@ -29,7 +26,7 @@ import org.springframework.data.redis.repository.configuration.EnableRedisReposi
                 classes = RefreshTokenRepository.class
         )
 )
-public class BodybubbyApplication { // 클래스 이름 하나로 통일!
+public class BodybubbyApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(BodybubbyApplication.class, args);
