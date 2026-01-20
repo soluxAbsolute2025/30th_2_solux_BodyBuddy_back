@@ -176,7 +176,7 @@ public class MyPageService {
                     .userLevel(level)
                     .profileImageUrl(post.getUser().getProfileImageUrl())
                     .createdAt(post.getCreatedAt())
-                    .place(post.getPlace())
+                    .place(post.getTitle())
                     .content(post.getContent())
                     .hashtags(tags)
                     .postImageUrl(imageUrl)
