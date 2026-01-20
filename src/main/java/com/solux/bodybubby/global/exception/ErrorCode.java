@@ -41,13 +41,13 @@ public enum ErrorCode {
     ALREADY_BUDDY(HttpStatus.CONFLICT, "B002", "이미 버디 관계인 사용자입니다."),
     DUPLICATE_BUDDY_REQUEST(HttpStatus.CONFLICT, "B003", "이미 처리 대기 중인 버디 요청이 있습니다."),
     BUDDY_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "B004", "존재하지 않는 버디 요청입니다."),
-    NOT_BUDDY_RECEIVER(HttpStatus.FORBIDDEN, "B005", "본인에게 온 요청만 처리할 수 있습니다."), // B004 중복이라 B005로 수정해드림
+    NOT_BUDDY_RECEIVER(HttpStatus.FORBIDDEN, "B004", "본인에게 온 요청만 처리할 수 있습니다."),
     INVALID_BUDDY_STATUS(HttpStatus.BAD_REQUEST, "B006", "현재 요청 중인 관계에서는 이 작업을 수행할 수 없습니다."),
     NOT_BUDDY_OWNER(HttpStatus.FORBIDDEN, "B007", "버디 삭제 권한이 없습니다."),
   
     // --- 콕찌르기 관련 에러 (PK000) ---
     ALREADY_POKED_TODAY(HttpStatus.BAD_REQUEST, "PK001", "오늘 이미 콕찌르기를 완료했습니다."),
-    NOT_BUDDY_RELATION(HttpStatus.FORBIDDEN, "PK002", "버디 상태인 유저만 콕찌르기가 가능합니다."), // <--- 여기가 문제였음 (세미콜론 -> 콤마로 변경)
+    NOT_BUDDY_RELATION(HttpStatus.FORBIDDEN, "PK002", "버디 상태인 유저만 콕찌르기가 가능합니다."),
   
     /* 400 BAD_REQUEST : 잘못된 요청 */
     INVALID_FILE_FORMAT(HttpStatus.BAD_REQUEST, "F001", "지원하지 않는 파일 형식입니다."),

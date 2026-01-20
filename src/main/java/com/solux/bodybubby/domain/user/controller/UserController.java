@@ -10,9 +10,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.Map;
-
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -33,13 +30,9 @@ public class UserController {
      * [로그인] POST /api/users/login
      */
     @PostMapping("/login")
-    public ResponseEntity<Map<String, String>> login(@Valid @RequestBody UserRequestDto.Login dto) {
-        String token = userService.login(dto);
-
-        // 응답 데이터 구성
-        Map<String, String> response = new HashMap<>();
-        response.put("accessToken", token);
-        response.put("tokenType", "Bearer");
+    public ResponseEntity<UserRequestDto.LoginResponse> login(@Valid @RequestBody UserRequestDto.Login dto) {
+        // 서비스에서 조립된 응답 객체를 바로 받음
+        UserRequestDto.LoginResponse response = userService.login(dto);
 
         return ResponseEntity.ok(response);
     }

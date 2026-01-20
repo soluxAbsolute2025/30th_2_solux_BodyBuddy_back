@@ -1,4 +1,4 @@
-package com.solux.bodybubby.global.service;
+package com.solux.bodybubby.s3Test;
 
 import com.solux.bodybubby.global.exception.BusinessException;
 import com.solux.bodybubby.global.exception.ErrorCode;

@@ -13,7 +13,7 @@ import com.solux.bodybubby.domain.user.entity.User;
 import com.solux.bodybubby.domain.user.repository.UserRepository;
 import com.solux.bodybubby.global.exception.BusinessException;
 import com.solux.bodybubby.global.exception.ErrorCode;
-import com.solux.bodybubby.global.service.S3Service;
+import com.solux.bodybubby.global.util.S3Provider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -33,7 +33,7 @@ public class PostService {
     private final PostHashtagRepository postHashtagRepository;
     private final HashtagRepository hashtagRepository;
     private final PostLikeRepository postLikeRepository;
-    private final S3Service s3Service;
+    private final S3Provider s3Provider;
 
     // 게시글 생성
     @Transactional
@@ -43,8 +43,14 @@ public class PostService {
 
         // 이미지 S3에 업로드
         String uploadedUrl = null;
-        if (image != null && !image.isEmpty())
-            uploadedUrl = s3Service.uploadFile(image);
+        if (image != null && !image.isEmpty()) {
+            System.out.println("이미지 있음.");
+
+            uploadedUrl = s3Provider.uploadFile(image, "post");
+            System.out.println("S3 업로드 성공 URL: " + uploadedUrl); // <--- 이 로그가 찍히는지 확인!
+        } else {
+            System.out.println("이미지 없음.");
+        }
 
         Post post = Post.builder()
                 .user(user)
@@ -114,15 +120,14 @@ public class PostService {
         }
 
         if (image != null && !image.isEmpty()) {
-            String newUrl = s3Service.uploadFile(image);
+            String newUrl = s3Provider.uploadFile(image, "post");
             post.updateImageUrl(newUrl);
         } else if (Boolean.TRUE.equals(dto.getImageDeleted())) {
             // 만약 프론트에서 사진 삭제 버튼을 눌렀다면 null 처리
             post.updateImageUrl(null);
         }
 
-        // 4번째 인자(이미지URL) 자리에 일단 null을 넣어줍니다.
-        post.update(dto.getTitle(), dto.getContent(), dto.getVisibility(), null);
+        post.update(dto.getTitle(), dto.getContent(), dto.getVisibility(), post.getImageUrl());
 
         updatePostHashtags(post, dto.getHashtags());
 

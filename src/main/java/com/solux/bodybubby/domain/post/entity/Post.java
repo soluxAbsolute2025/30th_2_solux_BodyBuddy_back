@@ -35,6 +35,7 @@ public class Post extends BaseTimeEntity {
     @Column(columnDefinition = "TEXT")
     private String content;
 
+    @Column(name = "image_url", length = 500)
     private String imageUrl;
 
     @Builder.Default
