@@ -1,0 +1,8 @@
+package com.bodybuddy.domain.home.enums;
+
+public enum TodoCategory {
+    MEDICINE,  // 약 (비타민 등)
+    WATER,     // 물
+    EXERCISE,  // 운동
+    MEAL       // 식사
+}

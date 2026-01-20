@@ -16,30 +16,40 @@ public class NotificationRule {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 알림 대상 유저
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    // 알림 카테고리
+    // 카테고리 (Entity로 연결)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category", nullable = false)
+    @JoinColumn(name = "category_id", nullable = false)
     private NotificationCategory category;
 
-    // 반복 타입 (ONCE / DAILY / WEEKLY / INTERVAL)
-    @Column(length = 20)
-    private String repeatType;
+    // ▼▼▼ [화면 기능을 위해 추가/수정된 필드] ▼▼▼
+    
+    private String label; // 예: "아침 식사 알림"
 
-    // HH:mm
+    private Boolean isEnabled; // ON/OFF 여부 (화면 토글)
+
+    // "07:00" 같은 문자열로 저장 (기존 timeOfDay 활용)
     @Column(length = 20)
     private String timeOfDay;
 
-    // 1~7 (월~일)
-    private Integer dayOfWeek;
+    // 요일 반복 (화면에서 '월,화,수' 복수 선택 하므로 문자열로 저장 추천)
+    // 예: "MON,TUE,WED"
+    private String repeatDays; 
 
-    // 분 단위
+    // (기존 필드 유지 - 필요 없다면 삭제해도 됨)
+    @Column(length = 20)
+    private String repeatType; 
     private Integer intervalMinutes;
-
     private String intervalStart;
     private String intervalEnd;
+
+    // [수정 메서드]
+    public void update(String timeOfDay, Boolean isEnabled, String repeatDays) {
+        if (timeOfDay != null) this.timeOfDay = timeOfDay;
+        if (isEnabled != null) this.isEnabled = isEnabled;
+        if (repeatDays != null) this.repeatDays = repeatDays;
+    }
 }
