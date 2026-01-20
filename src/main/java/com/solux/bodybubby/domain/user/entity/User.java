@@ -169,4 +169,6 @@ public class User extends BaseTimeEntity {
     // 2. 하루 식단 목표량
     @Column(name = "daily_diet_goal")
     private Integer dailyDietGoal;
+
+    
 }

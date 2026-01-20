@@ -17,6 +17,8 @@ public interface WaterLogRepository extends JpaRepository<WaterLog, Long> {
     List<WaterLog> findAllByUserIdAndLoggedAtBetween(Long userId, LocalDateTime start, LocalDateTime end);
    
     
-    @Query("SELECT SUM(w.amount) FROM WaterLog w WHERE w.user.id = :userId AND w.date = :date")
-    Integer sumAmountByUserIdAndDate(@Param("userId") Long userId, @Param("date") LocalDate date);
+  @Query("SELECT SUM(w.amountMl) FROM WaterLog w WHERE w.user.id = :userId AND w.loggedAt BETWEEN :start AND :end")
+    Integer sumAmountByUserIdAndDate(@Param("userId") Long userId, 
+                                     @Param("start") LocalDateTime start, 
+                                     @Param("end") LocalDateTime end);
 }
