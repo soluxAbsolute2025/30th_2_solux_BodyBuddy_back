@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -25,4 +26,8 @@ public interface SleepLogRepository extends JpaRepository<SleepLog, Long> {
 
     // ✅ 3. 중복 등록 방지용 (선택 사항)
     boolean existsByUserIdAndLoggedAtBetween(Long userId, LocalDateTime start, LocalDateTime end);
+
+    @Query("SELECT SUM(s.totalHours) FROM SleepLog s WHERE s.user.id = :userId AND s.date = :date")
+    Integer sumTotalHoursByUserIdAndDate(@Param("userId") Long userId, @Param("date") LocalDate date);
+
 }
