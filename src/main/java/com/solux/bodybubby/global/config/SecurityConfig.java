@@ -41,7 +41,8 @@ public class SecurityConfig {
                         // 1. 정적 리소스, H2 콘솔, 그리고 Swagger추가
                         .requestMatchers(
                                 "/", "/css/**", "/images/**", "/js/**", "/h2-console/**",
-                                "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"
+                                "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html",
+                                "/api/test/**"
                         ).permitAll()
 
                         // 2.유지 

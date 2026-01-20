@@ -59,7 +59,7 @@ public class UserService {
      * @return 발급된 실제 JWT 액세스 토큰
      */
     @Transactional
-    public String login(UserRequestDto.Login dto) {
+    public UserRequestDto.LoginResponse login(UserRequestDto.Login dto) {
         // 1. 아이디로 유저 조회
         User user = userRepository.findByLoginId(dto.getLoginId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
@@ -72,15 +72,18 @@ public class UserService {
         // 3. 액세스 토큰 생성 (JWT)
         String accessToken = jwtTokenProvider.createToken(user.getId(), user.getLoginId());
 
-        // 4. 리프레시 토큰 생성 및 Redis 저장 (유빈 님 피드백 핵심 구현)
+        // 4. 리프레시 토큰 생성 및 Redis 저장
         // 중복 로그인을 방지하거나 기존 토큰을 갱신하기 위해 유저 ID를 키로 저장합니다.
         String refreshTokenValue = UUID.randomUUID().toString();
         RefreshToken refreshToken = new RefreshToken(user.getId(), refreshTokenValue);
-
         // RedisRepository를 통해 저장 (설정한 TTL에 따라 자동 삭제됨)
         refreshTokenRepository.save(refreshToken);
 
-        return accessToken;
+        // 5. 결과 조립하여 반환 (유저 ID와 액세스 토큰을 함께 담음)
+        return UserRequestDto.LoginResponse.builder()
+                .userId(user.getId())
+                .accessToken(accessToken)
+                .build();
     }
 
     /**

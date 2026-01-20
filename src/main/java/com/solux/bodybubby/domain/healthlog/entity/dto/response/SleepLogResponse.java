@@ -8,24 +8,26 @@ import java.time.format.DateTimeFormatter;
 @Getter
 public class SleepLogResponse {
 
-    private Long sleepRecordId;  // 수정/삭제할 때 필요한 ID (예: 8001)
-    private String sleepDate;    // "2025-12-23"
-    private String bedTime;      // "23:30"
-    private String wakeTime;     // "07:00"
-    private String sleepQuality; // "GOOD"
-    private int totalMinutes;    // 총 수면 시간 (분 단위, 예: 450)
+    private Long sleepRecordId;
+    private String sleepDate;
+    private String bedTime;
+    private String wakeTime;
+    private String sleepQuality;
+    private int totalMinutes;
 
     public SleepLogResponse(SleepLog log) {
         this.sleepRecordId = log.getId();
         
-        // 날짜 포맷팅 (LocalDateTime -> "yyyy-MM-dd")
+        // 날짜 포맷팅
         this.sleepDate = log.getLoggedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
         
-        // 시간 포맷팅 (LocalDateTime -> "HH:mm")
+        // 시간 포맷팅
         this.bedTime = log.getSleepTime().format(DateTimeFormatter.ofPattern("HH:mm"));
         this.wakeTime = log.getWakeTime().format(DateTimeFormatter.ofPattern("HH:mm"));
         
-        this.sleepQuality = log.getQuality();
+        // ▼▼▼ [수정] getQuality() -> getSleepQuality() 로 변경! ▼▼▼
+        this.sleepQuality = log.getSleepQuality(); 
+        
         this.totalMinutes = log.getTotalMinutes() != null ? log.getTotalMinutes() : 0;
     }
 }
