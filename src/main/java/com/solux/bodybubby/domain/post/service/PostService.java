@@ -54,9 +54,9 @@ public class PostService {
 
         Post post = Post.builder()
                 .user(user)
-                .title(dto.getTitle())
                 .content(dto.getContent())
                 .imageUrl(uploadedUrl)
+                .place(dto.getPlace())
                 .visibility(dto.getVisibility())
                 .likeCount(0)
                 .build();
@@ -114,8 +114,7 @@ public class PostService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND));
 
         // 유저 체크 로직 수정 필요
-//        if(!post.getUser().getId().equals(currentUserId)) {
-        if(!post.getId().equals(1L)) {
+        if(!post.getUser().getId().equals(currentUserId)) {
             throw new BusinessException(ErrorCode.UPDATE_PERMISSION_DENIED);
         }
 
@@ -127,7 +126,7 @@ public class PostService {
             post.updateImageUrl(null);
         }
 
-        post.update(dto.getTitle(), dto.getContent(), dto.getVisibility(), post.getImageUrl());
+        post.update(dto.getContent(), dto.getPlace(), dto.getVisibility(), post.getImageUrl());
 
         updatePostHashtags(post, dto.getHashtags());
 

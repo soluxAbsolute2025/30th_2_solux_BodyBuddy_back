@@ -2,6 +2,7 @@ package com.solux.bodybubby.domain.post.dto.response;
 
 import com.solux.bodybubby.domain.post.entity.Post;
 import com.solux.bodybubby.domain.post.entity.Visibility;
+import com.solux.bodybubby.domain.user.entity.User;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,10 +19,13 @@ import java.util.stream.Collectors;
 public class PostResponseDto {
 
     private Long id;
-    private String title;
+//    private String title;
     private String content;
     private String writerNickname;
+    private String writerProfileImageUrl;
+    private Integer writerLevel;
     private String imageUrl;
+    private String place;
     private Integer likeCount;
     private boolean isLiked;
     private Visibility visibility;
@@ -30,17 +34,22 @@ public class PostResponseDto {
     private LocalDateTime updatedAt;
     private List<String> hashtags;
     private List<CommentResponseDto> comments;
+    private Integer commentCount;
 
     public static PostResponseDto fromEntity(Post post, boolean isLiked) {
+        User writer = post.getUser();
+
         List<String> hashtags = post.getPostHashtags().stream()
                 .map(postHashtag -> postHashtag.getHashtag().getTagName())
                 .collect(Collectors.toList());
 
         return PostResponseDto.builder()
                 .id(post.getId())
-                .title(post.getTitle())
                 .content(post.getContent())
                 .writerNickname(post.getUser().getNickname())
+                .writerProfileImageUrl(writer.getProfileImageUrl())
+                .writerLevel(writer.getLevel())
+                .place(post.getPlace())
                 .imageUrl(post.getImageUrl())
                 .likeCount(post.getLikeCount())
                 .isLiked(isLiked)
@@ -53,6 +62,7 @@ public class PostResponseDto {
                 .comments(post.getComments().stream()
                         .map(CommentResponseDto::fromEntity)
                         .collect(Collectors.toList()))
+                .commentCount(post.getComments().size())
                 .build();
     }
 
