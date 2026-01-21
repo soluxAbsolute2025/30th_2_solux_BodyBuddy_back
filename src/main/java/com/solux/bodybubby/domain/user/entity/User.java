@@ -163,4 +163,12 @@ public class User extends BaseTimeEntity {
         this.isSleepPublic = sleep;
     }
 
+    @Column(name = "daily_water_goal")
+    private Integer dailyWaterGoal;
+
+    // 2. 하루 식단 목표량
+    @Column(name = "daily_diet_goal")
+    private Integer dailyDietGoal;
+
+    
 }

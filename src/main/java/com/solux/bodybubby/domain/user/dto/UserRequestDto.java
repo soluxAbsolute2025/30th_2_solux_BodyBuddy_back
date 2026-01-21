@@ -3,6 +3,8 @@ package com.solux.bodybubby.domain.user.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -41,6 +43,18 @@ public class UserRequestDto {
 
         @NotBlank(message = "비밀번호를 입력해주세요.")
         private String password;
+    }
+
+    /**
+     * 로그인 성공시 userId도 함께 반환
+     */
+    @Getter
+    @AllArgsConstructor
+    @Builder
+    public static class LoginResponse {
+        private Long userId;
+        private String nickname;
+        private String accessToken;
     }
 
     /**

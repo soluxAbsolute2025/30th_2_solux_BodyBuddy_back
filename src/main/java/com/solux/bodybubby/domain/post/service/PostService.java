@@ -10,18 +10,18 @@ import com.solux.bodybubby.domain.post.repository.PostHashtagRepository;
 import com.solux.bodybubby.domain.post.repository.PostLikeRepository;
 import com.solux.bodybubby.domain.post.repository.PostRepository;
 import com.solux.bodybubby.domain.user.entity.User;
-import com.solux.bodybubby.domain.user.repository.UserRepositoryTemp;
+import com.solux.bodybubby.domain.user.repository.UserRepository;
 import com.solux.bodybubby.global.exception.BusinessException;
 import com.solux.bodybubby.global.exception.ErrorCode;
+import com.solux.bodybubby.global.util.S3Provider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -29,25 +29,34 @@ import java.util.stream.Collectors;
 public class PostService {
 
     private final PostRepository postRepository;
-    private final UserRepositoryTemp userRepository; // 임시 레포. 추후 변경 예정
+    private final UserRepository userRepository;
     private final PostHashtagRepository postHashtagRepository;
     private final HashtagRepository hashtagRepository;
     private final PostLikeRepository postLikeRepository;
+    private final S3Provider s3Provider;
 
     // 게시글 생성
     @Transactional
-    public Long createPost(PostRequestDto dto, Long currentUserId) {
-        // 임시로 1번 유저를 작성자로 지정
-        User user = userRepository.findById(1L)
-                .orElseThrow(() -> new IllegalArgumentException("테스트용 유저(ID:1)가 DB에 없습니다."));
+    public Long createPost(PostRequestDto dto, MultipartFile image, Long currentUserId) {
+        User user = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-//        User user = userRepository.findById(currentUserId)
-//                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        // 이미지 S3에 업로드
+        String uploadedUrl = null;
+        if (image != null && !image.isEmpty()) {
+            System.out.println("이미지 있음.");
+
+            uploadedUrl = s3Provider.uploadFile(image, "post");
+            System.out.println("S3 업로드 성공 URL: " + uploadedUrl); // <--- 이 로그가 찍히는지 확인!
+        } else {
+            System.out.println("이미지 없음.");
+        }
 
         Post post = Post.builder()
                 .user(user)
-                .title(dto.getTitle())
                 .content(dto.getContent())
+                .imageUrl(uploadedUrl)
+                .place(dto.getPlace())
                 .visibility(dto.getVisibility())
                 .likeCount(0)
                 .build();
@@ -100,17 +109,24 @@ public class PostService {
 
     // 게시글 수정
     @Transactional
-    public Long updatePost(Long postId, PostRequestDto dto, Long currentUserId) {
+    public Long updatePost(Long postId, PostRequestDto dto, MultipartFile image, Long currentUserId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND));
 
         // 유저 체크 로직 수정 필요
-//        if(!post.getUser().getId().equals(currentUserId)) {
-        if(!post.getId().equals(1L)) {
+        if(!post.getUser().getId().equals(currentUserId)) {
             throw new BusinessException(ErrorCode.UPDATE_PERMISSION_DENIED);
         }
 
-        post.update(dto.getTitle(), dto.getContent(), dto.getVisibility());
+        if (image != null && !image.isEmpty()) {
+            String newUrl = s3Provider.uploadFile(image, "post");
+            post.updateImageUrl(newUrl);
+        } else if (Boolean.TRUE.equals(dto.getImageDeleted())) {
+            // 만약 프론트에서 사진 삭제 버튼을 눌렀다면 null 처리
+            post.updateImageUrl(null);
+        }
+
+        post.update(dto.getContent(), dto.getPlace(), dto.getVisibility(), post.getImageUrl());
 
         updatePostHashtags(post, dto.getHashtags());
 
@@ -143,9 +159,7 @@ public class PostService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.POST_NOT_FOUND));
 
-        // 유저 체크 로직 수정 필요
-//        if(!post.getUser().getId().equals(currentUserId)) {
-        if(!post.getId().equals(1L)) {
+        if(!post.getUser().getId().equals(currentUserId)) {
             throw new BusinessException(ErrorCode.DELETE_PERMISSION_DENIED);
         }
 

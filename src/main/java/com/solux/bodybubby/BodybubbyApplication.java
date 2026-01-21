@@ -7,8 +7,10 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.data.redis.repository.configuration.EnableRedisRepositories;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 // @SpringBootApplication 어노테이션에 DB 관련 자동 설정을 제외하는 옵션을 추가합니다.
+@EnableScheduling
 @SpringBootApplication
 // 1. JPA 레포지토리 설정: 모든 레포지토리를 스캔하되, Redis 전용인 RefreshTokenRepository는 제외합니다.
 @EnableJpaRepositories(
@@ -26,6 +28,7 @@ import org.springframework.data.redis.repository.configuration.EnableRedisReposi
                 classes = RefreshTokenRepository.class
         )
 )
+
 public class BodybubbyApplication {
 
     public static void main(String[] args) {

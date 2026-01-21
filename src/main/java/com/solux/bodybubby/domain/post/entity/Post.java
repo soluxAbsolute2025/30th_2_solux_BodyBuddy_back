@@ -30,10 +30,14 @@ public class Post extends BaseTimeEntity {
     private User user;
 
     @Column(length = 100)
-    private String title;
+//    private String title;
+    private String place;
 
     @Column(columnDefinition = "TEXT")
     private String content;
+
+    @Column(name = "image_url", length = 500)
+    private String imageUrl;
 
     @Builder.Default
     private Integer likeCount = 0;
@@ -55,13 +59,14 @@ public class Post extends BaseTimeEntity {
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PostLike> likes = new ArrayList<>();
 
-    @Column(length = 1000)
-    private String imageUrl;
-
-    public void update(String title, String content, Visibility visibility, String imageUrl) {
-        this.title = title;
+    public void update(String content, String place, Visibility visibility, String imageUrl) {
+//        this.title = title;
         this.content = content;
         this.visibility = visibility;
+        this.imageUrl = imageUrl;
+    }
+
+    public void updateImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
     }
 

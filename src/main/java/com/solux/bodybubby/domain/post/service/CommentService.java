@@ -5,11 +5,9 @@ import com.solux.bodybubby.domain.post.entity.Post;
 import com.solux.bodybubby.domain.post.repository.CommentRepository;
 import com.solux.bodybubby.domain.post.repository.PostRepository;
 import com.solux.bodybubby.domain.user.entity.User;
-import com.solux.bodybubby.domain.user.repository.UserRepositoryTemp;
+import com.solux.bodybubby.domain.user.repository.UserRepository;
 import com.solux.bodybubby.global.exception.BusinessException;
 import com.solux.bodybubby.global.exception.ErrorCode;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,7 +19,7 @@ public class CommentService {
 
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
-    private final UserRepositoryTemp userRepository;
+    private final UserRepository userRepository;
 
     // 댓글 작성
     @Transactional
