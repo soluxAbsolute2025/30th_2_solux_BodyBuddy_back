@@ -12,8 +12,9 @@ import java.util.List;
 @AllArgsConstructor
 public class PostRequestDto {
 
-    private String title;
+//    private String title;
     private String content;
+    private String place;
     private Visibility visibility;
     private List<String> hashtags;
     private Boolean imageDeleted; // 게시물 수정 시 이미지 삭제했는지 여부

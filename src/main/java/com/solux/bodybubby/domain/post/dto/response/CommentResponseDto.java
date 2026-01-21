@@ -12,6 +12,8 @@ public class CommentResponseDto {
     private Long id;
     private String content;
     private String writerNickname;
+    private String writerProfileImageUrl;
+    private Integer writerLevel;
     private boolean isEdited; // 수정 여부
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -21,6 +23,8 @@ public class CommentResponseDto {
                 .id(comment.getId())
                 .content(comment.getContent())
                 .writerNickname(comment.getUser().getNickname())
+                .writerProfileImageUrl(comment.getUser().getProfileImageUrl())
+                .writerLevel(comment.getUser().getLevel())
                 .createdAt(comment.getCreatedAt())
                 .updatedAt(comment.getUpdatedAt())
                 // 생성 시간과 수정 시간이 다르면 (수정됨)으로 판단 (1초 미만 오차 허용)
