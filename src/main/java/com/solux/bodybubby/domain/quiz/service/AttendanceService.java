@@ -79,33 +79,31 @@ public class AttendanceService {
     }
 
     public QuizSolveResponseDto solveQuiz(Long userId, QuizSolveRequest request) {
+        // 1. 이미 출석했는지 검사
         if (attendanceRepository.findByUserIdAndAttendanceDate(userId, LocalDate.now()).isPresent()) {
             throw new BusinessException(ErrorCode.ALREADY_ATTENDED);
         }
 
-        // 해결: QuizSolveRequest가 record이므로 .questionId()로 호출
         Quiz quiz = quizService.findQuizById(request.questionId());
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        List<String> options = quiz.getOptionsList();
-        // 해결: .optionId()로 호출
-        String selectedAnswer = options.get(request.optionId() - 1);
-        boolean isCorrect = quiz.getAnswer().equals(selectedAnswer);
+        boolean isCorrect = quiz.getAnswer().equals(quiz.getOptionsList().get(request.optionId() - 1));
 
+        // 2. 정답 여부와 상관없이 무조건 오늘 출석 데이터 저장
+        attendanceRepository.save(Attendance.builder()
+                .user(user)
+                .attendanceDate(LocalDate.now())
+                .isQuizSolved(true)
+                .build());
+
+        // 3. 결과 처리
         if (isCorrect) {
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
-
-            // 해결: Quiz 엔티티에 @Builder가 있어야 작동함
-            attendanceRepository.save(Attendance.builder()
-                    .user(user)
-                    .attendanceDate(LocalDate.now())
-                    .isQuizSolved(true)
-                    .build());
-
-            user.addExp(quiz.getRewardExp());
-            return new QuizSolveResponseDto(true, quiz.getRewardExp());
+            user.addExp(quiz.getRewardExp()); // 정답 경험치 지급
+            return new QuizSolveResponseDto(true, quiz.getRewardExp(), quiz.getAnswer());
+        } else {
+            user.addExp(10); // 오답 시에도 최소 경험치(10) 지급 로직 추가!
+            return new QuizSolveResponseDto(false, 10, quiz.getAnswer());
         }
-
-        return new QuizSolveResponseDto(false, 0);
     }
 }
