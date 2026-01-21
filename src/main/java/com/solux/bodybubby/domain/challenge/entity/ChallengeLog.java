@@ -19,7 +19,9 @@ public class ChallengeLog {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /** 유저-챌린지 관계 */
+    /**
+     * 유저-챌린지 관계
+     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_challenges_id", nullable = false)
     private UserChallenge userChallenge;
@@ -28,4 +30,15 @@ public class ChallengeLog {
     private BigDecimal valueAchieved;
 
     private LocalDateTime createdAt;
+
+    /**
+     * 생성 시간 로직 강화
+     */
+    @PrePersist
+    public void prePersist() {
+        this.createdAt = LocalDateTime.now();
+        if (this.logDate == null) {
+            this.logDate = LocalDate.now();
+        }
+    }
 }
