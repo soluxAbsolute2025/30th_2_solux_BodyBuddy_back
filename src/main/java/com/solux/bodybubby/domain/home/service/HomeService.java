@@ -1,10 +1,12 @@
 package com.solux.bodybubby.domain.home.service;
 
-import com.solux.bodybubby.domain.healthlog.entity.MealLog;
-import com.solux.bodybubby.domain.healthlog.entity.repository.MealLogRepository;
-import com.solux.bodybubby.domain.healthlog.entity.repository.SleepLogRepository; // import 확인!
-import com.solux.bodybubby.domain.healthlog.entity.repository.WaterLogRepository;
-import com.solux.bodybubby.domain.home.dto.response.HomeResponseDTO;
+import com.solux.bodybubby.domain.home.dto.response.HomeResponseDTO; // DTO 임포트 확인
+import com.solux.bodybubby.domain.home.dto.response.HomeTodoListDTO;
+import com.solux.bodybubby.domain.home.dto.response.TodoItemDTO;
+import com.solux.bodybubby.domain.notification.entity.NotificationLog;
+import com.solux.bodybubby.domain.notification.entity.NotificationRule;
+import com.solux.bodybubby.domain.notification.repository.NotificationLogRepository;
+import com.solux.bodybubby.domain.notification.repository.NotificationRuleRepository;
 import com.solux.bodybubby.domain.user.entity.User;
 import com.solux.bodybubby.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -12,115 +14,111 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+@Transactional
 public class HomeService {
 
     private final UserRepository userRepository;
-    private final WaterLogRepository waterLogRepository;
-    private final MealLogRepository mealLogRepository;
-    
-    // ▼▼▼ [필수] 이 줄이 꼭 있어야 합니다! ▼▼▼
-    private final SleepLogRepository sleepLogRepository; 
+    private final NotificationRuleRepository notificationRuleRepository;
+    private final NotificationLogRepository notificationLogRepository;
 
+    // [추가된 메서드] 홈 화면 메인 데이터 조회 (getHomeData)
+    // 컨트롤러에서 호출하는 이름과 똑같이 만들어야 합니다.
+    @Transactional(readOnly = true)
     public HomeResponseDTO getHomeData(Long userId) {
-        // 1. 오늘 날짜 및 유저 조회
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("유저 없음"));
+
+        // 1. 투두 리스트 가져오기 (기존 로직 활용)
+        HomeTodoListDTO todoList = getTodayTodoList(userId);
+
+        // 2. 홈 응답 DTO 생성
+        // (HomeResponseDTO의 필드 구성에 따라 .builder() 내용은 달라질 수 있습니다)
+        // 예시: 닉네임과 투두리스트를 반환한다고 가정
+        return HomeResponseDTO.builder()
+                // .nickname(user.getNickname()) // 만약 닉네임 필드가 있다면 주석 해제
+                // .progress(80) // 만약 달성률 필드가 있다면
+                // .todoList(todoList) // 만약 투두리스트를 포함한다면
+                .build();
+    }
+
+    // [기존 메서드] 투두 리스트 조회 (getTodayTodoList)
+    @Transactional(readOnly = true)
+    public HomeTodoListDTO getTodayTodoList(Long userId) {
         LocalDate today = LocalDate.now();
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저입니다."));
+                .orElseThrow(() -> new IllegalArgumentException("유저 없음"));
 
-        // ==========================================
-        // 2. 수분 (WaterInfo)
-        // ==========================================
-      int waterGoal = user.getDailyWaterGoal() != null ? user.getDailyWaterGoal() : 2000;
-        
-        // ▼▼▼ [수정] 날짜만 넣던 것을 -> 시작시간/끝시간으로 변경 ▼▼▼
-        LocalDateTime startOfDay = today.atStartOfDay();
-        LocalDateTime endOfDay = today.atTime(23, 59, 59);
-        
-        Integer currentWater = waterLogRepository.sumAmountByUserIdAndDate(userId, startOfDay, endOfDay);
-        // ▲▲▲ 여기까지 수정 ▲▲▲
-        
-        if (currentWater == null) currentWater = 0;
+        String currentDayOfWeek = today.getDayOfWeek().toString().substring(0, 3); // MON, TUE...
 
-        int waterPercent = (int) ((double) currentWater / waterGoal * 100);
-        if (waterPercent > 100) waterPercent = 100;
+        List<NotificationRule> rules = notificationRuleRepository.findAllByUser_Id(userId);
 
-        HomeResponseDTO.WaterInfo waterInfo = HomeResponseDTO.WaterInfo.builder()
-                .current(currentWater)
-                .goal(waterGoal)
-                .percent(waterPercent)
-                .build();
+        List<TodoItemDTO> medicineList = new ArrayList<>();
+        List<TodoItemDTO> waterList = new ArrayList<>();
+        List<TodoItemDTO> exerciseList = new ArrayList<>();
+        List<TodoItemDTO> mealList = new ArrayList<>();
 
-        // ==========================================
-        // 3. 식단 (MealInfo)
-        // ==========================================
-        int mealGoal = 3;
-        List<MealLog> todayMeals = mealLogRepository.findByUserIdAndIntakeDate(userId, today);
-        int currentMealCount = todayMeals.size();
+        for (NotificationRule rule : rules) {
+            if (Boolean.FALSE.equals(rule.getIsEnabled())) continue;
 
-        int mealPercent = (int) ((double) currentMealCount / mealGoal * 100);
-        if (mealPercent > 100) mealPercent = 100;
+            if (rule.getRepeatDays() == null || !rule.getRepeatDays().contains(currentDayOfWeek)) {
+                continue;
+            }
 
-        boolean isBreakfast = todayMeals.stream()
-                .anyMatch(m -> "BREAKFAST".equalsIgnoreCase(m.getMealType()) || "아침".equals(m.getMealType()));
-        boolean isLunch = todayMeals.stream()
-                .anyMatch(m -> "LUNCH".equalsIgnoreCase(m.getMealType()) || "점심".equals(m.getMealType()));
-        boolean isDinner = todayMeals.stream()
-                .anyMatch(m -> "DINNER".equalsIgnoreCase(m.getMealType()) || "저녁".equals(m.getMealType()));
+            Optional<NotificationLog> log = notificationLogRepository.findByUserAndNotificationRuleAndDate(user, rule, today);
+            boolean isChecked = log.map(NotificationLog::isCompleted).orElse(false);
 
-        HomeResponseDTO.MealInfo mealInfo = HomeResponseDTO.MealInfo.builder()
-                .current(currentMealCount)
-                .goal(mealGoal)
-                .percent(mealPercent)
-                .isBreakfastEaten(isBreakfast)
-                .isLunchEaten(isLunch)
-                .isDinnerEaten(isDinner)
-                .build();
+            TodoItemDTO item = TodoItemDTO.builder()
+                    .notificationId(rule.getId())
+                    .title(rule.getLabel())
+                    .time(LocalTime.parse(rule.getTimeOfDay()))
+                    .isChecked(isChecked)
+                    .build();
 
-        // ==========================================
-        // 4. 수면 (SleepInfo) - [수정 완료]
-        // ==========================================
-        
-       // A. 유저의 목표 가져오기 (시간 & 분)
-        Integer goalHour = user.getDailySleepHoursGoal();
-        Integer goalMin = user.getDailySleepMinutesGoal();
+            String categoryName = rule.getCategory().getName();
 
-        // (값이 없을 경우 기본값 설정: 8시간 0분)
-        if (goalHour == null) goalHour = 8;
-        if (goalMin == null) goalMin = 0;
-
-        // B. 목표를 '분'으로 통합 (시간*60 + 분)
-        // 예: 7시간 30분 -> (7*60) + 30 = 450분
-        int totalGoalMinutes = (goalHour * 60) + goalMin;
-
-        // C. 오늘 실제 잔 시간 가져오기 (DB에서 이미 분 단위 합계)
-        Integer currentMinutes = sleepLogRepository.sumTotalMinutesByUserIdAndDate(userId, today);
-        if (currentMinutes == null) currentMinutes = 0;
-
-        // D. 퍼센트 계산
-        int sleepPercent = 0;
-        if (totalGoalMinutes > 0) { // 목표가 0이면 나눗셈 에러 나니까 체크
-            sleepPercent = (int) ((double) currentMinutes / totalGoalMinutes * 100);
-            if (sleepPercent > 100) sleepPercent = 100;
+            if ("MEDICINE".equals(categoryName)) medicineList.add(item);
+            else if ("WATER".equals(categoryName)) waterList.add(item);
+            else if ("EXERCISE".equals(categoryName)) exerciseList.add(item);
+            else if ("MEAL".equals(categoryName)) mealList.add(item);
         }
 
-        // E. 결과 담기
-        HomeResponseDTO.SleepInfo sleepInfo = HomeResponseDTO.SleepInfo.builder()
-                .current(currentMinutes)     // 현재 기록 (분)
-                .goal(totalGoalMinutes)      // 변환된 목표 (분)
-                // .percent(sleepPercent)    // DTO에 퍼센트 필드 있으면 주석 해제
+        return HomeTodoListDTO.builder()
+                .medicine(medicineList)
+                .water(waterList)
+                .exercise(exerciseList)
+                .meal(mealList)
                 .build();
+    }
 
-                return HomeResponseDTO.builder()
-                .date(today.toString())
-                .water(waterInfo)
-                .meal(mealInfo)
-                .sleep(sleepInfo)
-                .build();
+    // [기존 메서드] 투두 체크/해제
+    public boolean checkTodo(Long userId, Long ruleId) {
+        LocalDate today = LocalDate.now();
+        User user = userRepository.findById(userId).orElseThrow();
+        NotificationRule rule = notificationRuleRepository.findById(ruleId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 알림입니다."));
+
+        Optional<NotificationLog> existingLog = notificationLogRepository.findByUserAndNotificationRuleAndDate(user, rule, today);
+
+        if (existingLog.isPresent()) {
+            NotificationLog log = existingLog.get();
+            log.toggleStatus();
+            return log.isCompleted();
+        } else {
+            NotificationLog newLog = NotificationLog.builder()
+                    .user(user)
+                    .notificationRule(rule)
+                    .date(today)
+                    .isCompleted(true)
+                    .build();
+            notificationLogRepository.save(newLog);
+            return true;
+        }
     }
 }
