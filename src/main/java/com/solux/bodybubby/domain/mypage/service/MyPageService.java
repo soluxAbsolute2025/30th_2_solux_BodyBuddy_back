@@ -3,10 +3,7 @@ package com.solux.bodybubby.domain.mypage.service;
 import com.solux.bodybubby.domain.badge.entity.Badge;
 import com.solux.bodybubby.domain.badge.repository.BadgeRepository;
 import com.solux.bodybubby.domain.badge.repository.UserBadgeRepository;
-import com.solux.bodybubby.domain.mypage.dto.BadgeCollectionDto;
-import com.solux.bodybubby.domain.mypage.dto.MyPageResponseDto;
-import com.solux.bodybubby.domain.mypage.dto.MyPostDto;
-import com.solux.bodybubby.domain.mypage.dto.PrivacySettingsDto;
+import com.solux.bodybubby.domain.mypage.dto.*;
 import com.solux.bodybubby.domain.mypage.entity.LevelTier;
 import com.solux.bodybubby.domain.post.entity.Post;
 import com.solux.bodybubby.domain.post.entity.Visibility;
@@ -21,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -90,6 +88,45 @@ public class MyPageService {
                 .currentExp(exp)
                 .nextLevelExp((tier == LevelTier.MASTER) ? exp : nextLevelExp)
                 .remainingExp(remainingExp)
+                .build();
+    }
+
+    /**
+     * [버디 등급 조회] GET /api/mypage/levels
+     */
+    public LevelResponseDto getBuddyLevels(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        int currentExp = user.getCurrentExp();
+        LevelTier userTier = LevelTier.getTier(currentExp);
+
+        // 1. 기존에 만드신 buildLevelInfo 메서드를 사용하여 내 정보 생성
+        MyPageResponseDto.LevelInfoDto myInfo = buildLevelInfo(currentExp, userTier);
+
+        // 2. 전체 등급 리스트 생성 (Enum 전체를 돌면서 조립)
+        List<LevelResponseDto.AllLevelInfo> allLevels = Arrays.stream(LevelTier.values())
+                .map(tier -> LevelResponseDto.AllLevelInfo.builder()
+                        .level(tier.ordinal() + 1)
+                        .rankName(tier.getRankName())
+                        .levelImageUrl(tier.getIconUrl())
+                        .minPoint(tier.getMinPoint())
+                        .maxPoint(tier == LevelTier.MASTER ? null : tier.getMaxPoint())
+                        .isMyLevel(tier == userTier) // 디자인의 '내 등급' 표시용
+                        .build())
+                .collect(Collectors.toList());
+
+        // 3. 전체 데이터 묶어서 반환
+        return LevelResponseDto.builder()
+                .myLevelInfo(LevelResponseDto.MyLevelInfo.builder()
+                        .currentLevel(myInfo.getCurrentLevel())
+                        .levelName(myInfo.getLevelName())
+                        .levelImageUrl(myInfo.getLevelImageUrl())
+                        .currentExp(myInfo.getCurrentExp())
+                        .nextLevelExp(myInfo.getNextLevelExp())
+                        .remainingExp(myInfo.getRemainingExp())
+                        .build())
+                .allLevels(allLevels)
                 .build();
     }
 
