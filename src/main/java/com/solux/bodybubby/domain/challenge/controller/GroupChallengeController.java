@@ -4,8 +4,10 @@ import com.solux.bodybubby.domain.challenge.dto.*;
 import com.solux.bodybubby.domain.challenge.service.GroupChallengeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -47,8 +49,13 @@ public class GroupChallengeController {
     /**
      * 그룹 챌린지 생성
      */
-    @PostMapping
-    public ResponseEntity<GroupCreateResponse> createChallenge(Long userId, @RequestBody GroupCreateRequest request) {
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<GroupCreateResponse> createChallenge(
+            Long userId,
+            @RequestPart("request") GroupCreateRequest request, // JSON 데이터 파트
+            @RequestPart(value = "image", required = false) MultipartFile image // 이미지 파일 파트
+    ) {
+        // 이미지를 처리하는 로직 필요시 image 넘기기
         GroupCreateResponse response = challengeService.createGroupChallenge(request, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }

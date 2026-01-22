@@ -21,9 +21,6 @@ public class Challenge {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /**
-     * 챌린지 생성자
-     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "creator_user_id", nullable = false)
     private User creator;
@@ -34,7 +31,9 @@ public class Challenge {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    private String targetType;         // 예: DAILY, TOTAL
+    private String privacyScope;     // 공개 범위 설정 (FRIENDS, PUBLIC, PRIVATE)
+
+    private String targetType;         // DAILY, TOTAL
     private BigDecimal targetValue;
     private String targetUnit;
 
@@ -42,6 +41,7 @@ public class Challenge {
     private LocalDate endDate;
 
     private Integer baseRewardPoints;
+
     @Enumerated(EnumType.STRING)
     private ChallengeStatus status;    // RECRUITING, IN_PROGRESS 등
 

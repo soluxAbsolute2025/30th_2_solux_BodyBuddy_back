@@ -110,26 +110,44 @@ public class GroupChallengeService {
         User creator = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
+        // 기간은 최소 7일 이상
+        if (request.getPeriod() == null || request.getPeriod() < 7) {
+            throw new IllegalArgumentException("챌린지 기간은 최소 7일 이상으로 설정해야 합니다.");
+        }
+
         LocalDate startDate = LocalDate.now();
         LocalDate endDate = startDate.plusDays(request.getPeriod());
 
         Challenge challenge = Challenge.builder()
-                .creator(creator).title(request.getTitle()).description(request.getDescription())
-                .challengeType(request.getChallengeType()).targetType(request.getTargetType())
-                .targetValue(request.getTargetValue()).targetUnit(request.getTargetUnit())
-                .startDate(startDate).endDate(endDate).maxParticipants(request.getMaxParticipants())
-                .status(ChallengeStatus.RECRUITING).build();
+                .creator(creator)
+                .title(request.getTitle())
+                .description(request.getDescription())
+                .privacyScope(request.getPrivacyScope())
+                .challengeType(request.getChallengeType()) // 누락 시 null 저장 방지
+                .targetType(request.getTargetType())
+                .targetValue(request.getTargetValue())
+                .targetUnit(request.getTargetUnit())
+                .startDate(startDate)
+                .endDate(endDate)
+                .maxParticipants(request.getMaxParticipants())
+                .status(ChallengeStatus.RECRUITING)
+                .build();
 
         Challenge savedChallenge = challengeRepository.save(challenge);
 
+        // 방장 자동 참여 등록
         userChallengeRepository.save(UserChallenge.builder()
                 .user(creator).challenge(savedChallenge).currentProgress(BigDecimal.ZERO)
                 .achievementRate(BigDecimal.ZERO).status("IN_PROGRESS")
                 .joinedAt(LocalDateTime.now()).build());
 
+        // 성공 화면을 위한 그룹 코드 반환
         return GroupCreateResponse.builder()
-                .status(201).groupId(savedChallenge.getId()).groupCode(savedChallenge.getGroupCode())
-                .message("그룹 챌린지가 생성되었습니다.").build();
+                .status(201)
+                .groupId(savedChallenge.getId())
+                .groupCode(savedChallenge.getGroupCode())
+                .message("그룹 챌린지가 생성되었습니다.")
+                .build();
     }
 
     /**
