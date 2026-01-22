@@ -60,7 +60,8 @@ public class User extends BaseTimeEntity {
 
     // 설정 정보
     @Column(length = 100)
-    private String introduction;
+    @Builder.Default
+    private String introduction = "건강한 라이프 스타일 실천 중";
 
     @Column(name = "profile_image_url")
     private String profileImageUrl;
@@ -170,5 +171,5 @@ public class User extends BaseTimeEntity {
     @Column(name = "daily_diet_goal")
     private Integer dailyDietGoal;
 
-    
+
 }
