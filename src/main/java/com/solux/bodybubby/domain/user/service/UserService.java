@@ -82,6 +82,7 @@ public class UserService {
         // 5. 결과 조립하여 반환 (유저 ID와 액세스 토큰을 함께 담음)
         return UserRequestDto.LoginResponse.builder()
                 .userId(user.getId())
+                .nickname(user.getNickname())
                 .accessToken(accessToken)
                 .build();
     }

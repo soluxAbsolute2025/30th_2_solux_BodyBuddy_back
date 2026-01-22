@@ -53,6 +53,7 @@ public class UserRequestDto {
     @Builder
     public static class LoginResponse {
         private Long userId;
+        private String nickname;
         private String accessToken;
     }
 

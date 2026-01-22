@@ -7,6 +7,7 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "challenges")
@@ -20,7 +21,9 @@ public class Challenge {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /** 챌린지 생성자 */
+    /**
+     * 챌린지 생성자
+     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "creator_user_id", nullable = false)
     private User creator;
@@ -39,12 +42,35 @@ public class Challenge {
     private LocalDate endDate;
 
     private Integer baseRewardPoints;
-    private String status;             // OPEN, CLOSED 등
+    @Enumerated(EnumType.STRING)
+    private ChallengeStatus status;    // RECRUITING, IN_PROGRESS 등
 
+    @Column(unique = true)
     private String groupCode;
     private Integer maxParticipants;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
+
+    @PrePersist
+    public void prePersist() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+
+        // 그룹 챌린지일 경우 고유 코드 8자리 자동 생성
+        if (this.groupCode == null || this.groupCode.isEmpty()) {
+            this.groupCode = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        }
+
+        // 기본 상태 '모집중' 설정
+        if (this.status == null) {
+            this.status = ChallengeStatus.RECRUITING;
+        }
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
 }
