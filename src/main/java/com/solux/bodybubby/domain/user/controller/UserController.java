@@ -1,6 +1,7 @@
 package com.solux.bodybubby.domain.user.controller;
 
 import com.solux.bodybubby.domain.user.dto.UserRequestDto;
+import com.solux.bodybubby.domain.user.dto.UserResponseDto;
 import com.solux.bodybubby.domain.user.service.UserService;
 import com.solux.bodybubby.global.security.CustomUserDetails;
 import jakarta.validation.Valid;
@@ -47,6 +48,19 @@ public class UserController {
             userService.logout(accessToken);
         }
         return ResponseEntity.ok().build();
+    }
+
+    /**
+     * [회원정보 간단 조회] GET /api/users
+     */
+    @GetMapping //
+    public ResponseEntity<UserResponseDto.SimpleInfo> getSimpleInfo(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        // 토큰에서 추출된 ID를 서비스에 전달합니다.
+        UserResponseDto.SimpleInfo response = userService.getSimpleInfo(userDetails.getId());
+
+        return ResponseEntity.ok(response);
     }
 
     /**
