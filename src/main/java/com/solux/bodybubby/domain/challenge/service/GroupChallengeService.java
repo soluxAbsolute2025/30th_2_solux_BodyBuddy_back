@@ -25,7 +25,7 @@ import java.util.stream.IntStream;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class ChallengeService {
+public class GroupChallengeService {
     private final UserRepository userRepository;
     private final ChallengeRepository challengeRepository;
     private final UserChallengeRepository userChallengeRepository;
@@ -34,21 +34,21 @@ public class ChallengeService {
     /**
      * 참여 중 그룹 챌린지 목록 조회
      */
-    public List<OngoingGroupListResponse> getOngoingList(Long userId) {
+    public List<GroupListResponse> getOngoingList(Long userId) {
         List<UserChallenge> userChallenges = userChallengeRepository.findAllByUserIdAndStatus(userId, "IN_PROGRESS");
 
         return userChallenges.stream().map(uc -> {
             Challenge challenge = uc.getChallenge();
-            List<OngoingGroupListResponse.ParticipantProfile> topProfiles =
+            List<GroupListResponse.ParticipantProfile> topProfiles =
                     userChallengeRepository.findAllByChallengeIdOrderByAchievementRateDesc(challenge.getId())
                             .stream().limit(3)
-                            .map(p -> OngoingGroupListResponse.ParticipantProfile.builder()
+                            .map(p -> GroupListResponse.ParticipantProfile.builder()
                                     .profileImageUrl(p.getUser().getProfileImageUrl()).build())
                             .collect(Collectors.toList());
 
             long remainingDays = ChronoUnit.DAYS.between(LocalDate.now(), challenge.getEndDate());
 
-            return OngoingGroupListResponse.builder()
+            return GroupListResponse.builder()
                     .challengeId(challenge.getId()).title(challenge.getTitle())
                     .myRank(uc.getCurrentRank())
                     .participantCount((int) userChallengeRepository.countByChallengeId(challenge.getId()))
@@ -60,30 +60,30 @@ public class ChallengeService {
     /**
      * 참여 중 그룹 챌린지 상세 조회
      */
-    public OngoingGroupDetailResponse getDetail(Long challengeId, Long userId) {
+    public GroupDetailResponse getDetail(Long challengeId, Long userId) {
         UserChallenge myUc = userChallengeRepository.findByUserIdAndChallengeId(userId, challengeId)
                 .orElseThrow(() -> new IllegalArgumentException("참여 중인 챌린지가 아닙니다."));
 
         Challenge challenge = myUc.getChallenge();
         List<UserChallenge> rankings = userChallengeRepository.findAllByChallengeIdOrderByAchievementRateDesc(challengeId);
 
-        List<OngoingGroupDetailResponse.ParticipantDetail> participantDetails = IntStream.range(0, rankings.size())
+        List<GroupDetailResponse.ParticipantDetail> participantDetails = IntStream.range(0, rankings.size())
                 .mapToObj(i -> {
                     UserChallenge uc = rankings.get(i);
-                    return OngoingGroupDetailResponse.ParticipantDetail.builder()
+                    return GroupDetailResponse.ParticipantDetail.builder()
                             .rank(i + 1).nickname(uc.getUser().getNickname())
                             .profileImageUrl(uc.getUser().getProfileImageUrl())
                             .achievementRate(uc.getAchievementRate())
                             .isMe(uc.getUser().getId().equals(userId)).build();
                 }).collect(Collectors.toList());
 
-        return OngoingGroupDetailResponse.builder()
-                .challengeInfo(OngoingGroupDetailResponse.ChallengeInfo.builder()
+        return GroupDetailResponse.builder()
+                .challengeInfo(GroupDetailResponse.ChallengeInfo.builder()
                         .title(challenge.getTitle()).description(challenge.getDescription())
                         .startDate(challenge.getStartDate().toString()).endDate(challenge.getEndDate().toString())
                         .groupCode(challenge.getGroupCode()).currentParticipantCount(rankings.size())
                         .maxParticipantCount(challenge.getMaxParticipants()).isPublic(true).build())
-                .myStatus(OngoingGroupDetailResponse.MyStatus.builder()
+                .myStatus(GroupDetailResponse.MyStatus.builder()
                         .myAchievementRate(myUc.getAchievementRate()).myRank(myUc.getCurrentRank()).build())
                 .groupAverageRate(BigDecimal.valueOf(userChallengeRepository.getGroupAverageRate(challengeId)))
                 .participants(participantDetails).build();
@@ -92,10 +92,10 @@ public class ChallengeService {
     /**
      * 새로운 그룹 챌린지 조회 (모집 중인 것 전체)
      */
-    public List<SearchGroupResponse> searchNewGroups() {
+    public List<GroupSearchResponse> searchNewGroups() {
         return challengeRepository.findAll().stream()
                 .filter(c -> c.getStatus() == ChallengeStatus.RECRUITING)
-                .map(c -> SearchGroupResponse.builder()
+                .map(c -> GroupSearchResponse.builder()
                         .challengeId(c.getId()).title(c.getTitle()).description(c.getDescription())
                         .currentParticipants((int) userChallengeRepository.countByChallengeId(c.getId()))
                         .maxParticipants(c.getMaxParticipants()).challengeType(c.getChallengeType()).build())
@@ -106,30 +106,48 @@ public class ChallengeService {
      * 그룹 챌린지 생성
      */
     @Transactional
-    public CreateGroupResponse createGroupChallenge(CreateGroupRequest request, Long userId) {
+    public GroupCreateResponse createGroupChallenge(GroupCreateRequest request, Long userId) {
         User creator = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        // 기간은 최소 7일 이상
+        if (request.getPeriod() == null || request.getPeriod() < 7) {
+            throw new IllegalArgumentException("챌린지 기간은 최소 7일 이상으로 설정해야 합니다.");
+        }
 
         LocalDate startDate = LocalDate.now();
         LocalDate endDate = startDate.plusDays(request.getPeriod());
 
         Challenge challenge = Challenge.builder()
-                .creator(creator).title(request.getTitle()).description(request.getDescription())
-                .challengeType(request.getChallengeType()).targetType(request.getTargetType())
-                .targetValue(request.getTargetValue()).targetUnit(request.getTargetUnit())
-                .startDate(startDate).endDate(endDate).maxParticipants(request.getMaxParticipants())
-                .status(ChallengeStatus.RECRUITING).build();
+                .creator(creator)
+                .title(request.getTitle())
+                .description(request.getDescription())
+                .privacyScope(request.getPrivacyScope())
+                .challengeType(request.getChallengeType()) // 누락 시 null 저장 방지
+                .targetType(request.getTargetType())
+                .targetValue(request.getTargetValue())
+                .targetUnit(request.getTargetUnit())
+                .startDate(startDate)
+                .endDate(endDate)
+                .maxParticipants(request.getMaxParticipants())
+                .status(ChallengeStatus.RECRUITING)
+                .build();
 
         Challenge savedChallenge = challengeRepository.save(challenge);
 
+        // 방장 자동 참여 등록
         userChallengeRepository.save(UserChallenge.builder()
                 .user(creator).challenge(savedChallenge).currentProgress(BigDecimal.ZERO)
                 .achievementRate(BigDecimal.ZERO).status("IN_PROGRESS")
                 .joinedAt(LocalDateTime.now()).build());
 
-        return CreateGroupResponse.builder()
-                .status(201).groupId(savedChallenge.getId()).groupCode(savedChallenge.getGroupCode())
-                .message("그룹 챌린지가 생성되었습니다.").build();
+        // 성공 화면을 위한 그룹 코드 반환
+        return GroupCreateResponse.builder()
+                .status(201)
+                .groupId(savedChallenge.getId())
+                .groupCode(savedChallenge.getGroupCode())
+                .message("그룹 챌린지가 생성되었습니다.")
+                .build();
     }
 
     /**
@@ -160,7 +178,7 @@ public class ChallengeService {
      * 그룹 챌린지 수정 (방장 권한 확인)
      */
     @Transactional
-    public void updateChallenge(Long id, CreateGroupRequest request, Long userId) {
+    public void updateChallenge(Long id, GroupCreateRequest request, Long userId) {
         Challenge challenge = challengeRepository.findById(id).orElseThrow();
         if (!challenge.getCreator().getId().equals(userId)) throw new IllegalStateException("권한이 없습니다.");
     }
@@ -179,7 +197,7 @@ public class ChallengeService {
      * 그룹 챌린지 인증 (Check-in)
      */
     @Transactional
-    public CheckInResponse checkIn(Long challengeId, Long userId, BigDecimal value) {
+    public GroupCheckInResponse checkIn(Long challengeId, Long userId, BigDecimal value) {
         UserChallenge uc = userChallengeRepository.findByUserIdAndChallengeId(userId, challengeId)
                 .orElseThrow(() -> new IllegalArgumentException("참여 정보를 찾을 수 없습니다."));
 
@@ -189,9 +207,9 @@ public class ChallengeService {
         uc.updateProgress(value);
 
         // 에러 해결: MyStatusUpdate 내부 클래스 빌더 사용
-        return CheckInResponse.builder()
+        return GroupCheckInResponse.builder()
                 .challengeId(challengeId).title(uc.getChallenge().getTitle()).earnedPoints(10)
-                .myStatus(CheckInResponse.MyStatusUpdate.builder()
+                .myStatus(GroupCheckInResponse.MyStatusUpdate.builder()
                         .updatedAchievementRate(uc.getAchievementRate())
                         .currentRank(uc.getCurrentRank()).build())
                 .groupAverageRate(BigDecimal.valueOf(userChallengeRepository.getGroupAverageRate(challengeId)))

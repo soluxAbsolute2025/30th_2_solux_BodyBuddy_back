@@ -7,6 +7,6 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class JoinGroupRequest {
+public class GroupJoinRequest {
     private String groupCode; // "ABC123Z"
 }

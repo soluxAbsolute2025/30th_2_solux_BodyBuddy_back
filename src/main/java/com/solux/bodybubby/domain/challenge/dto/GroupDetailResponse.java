@@ -10,7 +10,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 
-public class OngoingGroupDetailResponse {
+public class GroupDetailResponse {
     private ChallengeInfo challengeInfo;    // 챌린지 기본 정보
     private MyStatus myStatus;              // 내 현재 상태
     private BigDecimal groupAverageRate;    // 그룹 전체 평균 진행률
