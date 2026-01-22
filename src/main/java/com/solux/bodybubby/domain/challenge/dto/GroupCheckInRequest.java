@@ -11,6 +11,6 @@ import java.math.BigDecimal;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class CheckInRequest {
+public class GroupCheckInRequest {
     private BigDecimal currentValue; // 오늘 수행한 수치 (예: 10000)
 }

@@ -1,7 +1,7 @@
 package com.solux.bodybubby.domain.challenge.controller;
 
 import com.solux.bodybubby.domain.challenge.dto.*;
-import com.solux.bodybubby.domain.challenge.service.ChallengeService;
+import com.solux.bodybubby.domain.challenge.service.GroupChallengeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,17 +12,17 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/challenges/group")
-public class ChallengeController {
+public class GroupChallengeController {
 
-    private final ChallengeService challengeService;
+    private final GroupChallengeService challengeService;
 
     /**
      * 참여 중 그룹 챌린지 목록 조회
      */
     @GetMapping("/ongoing")
-    public ResponseEntity<ChallengeResponseDto<List<OngoingGroupListResponse>>> getOngoingList(Long userId) {
+    public ResponseEntity<ChallengeResponseDto<List<GroupListResponse>>> getOngoingList(Long userId) {
         // userId는 LoginUserArgumentResolver에서 주입받습니다.
-        List<OngoingGroupListResponse> response = challengeService.getOngoingList(userId);
+        List<GroupListResponse> response = challengeService.getOngoingList(userId);
         return ResponseEntity.ok(new ChallengeResponseDto<>(200, "조회 성공", response));
     }
 
@@ -30,8 +30,8 @@ public class ChallengeController {
      * 참여 중 그룹 챌린지 상세 조회
      */
     @GetMapping("/ongoing/{id}")
-    public ResponseEntity<ChallengeResponseDto<OngoingGroupDetailResponse>> getDetail(@PathVariable Long id, Long userId) {
-        OngoingGroupDetailResponse response = challengeService.getDetail(id, userId);
+    public ResponseEntity<ChallengeResponseDto<GroupDetailResponse>> getDetail(@PathVariable Long id, Long userId) {
+        GroupDetailResponse response = challengeService.getDetail(id, userId);
         return ResponseEntity.ok(new ChallengeResponseDto<>(200, "상세 조회 성공", response));
     }
 
@@ -39,8 +39,8 @@ public class ChallengeController {
      * 새로운 그룹 조회
      */
     @GetMapping
-    public ResponseEntity<ChallengeResponseDto<List<SearchGroupResponse>>> searchGroups() {
-        List<SearchGroupResponse> response = challengeService.searchNewGroups();
+    public ResponseEntity<ChallengeResponseDto<List<GroupSearchResponse>>> searchGroups() {
+        List<GroupSearchResponse> response = challengeService.searchNewGroups();
         return ResponseEntity.ok(new ChallengeResponseDto<>(200, "새로운 그룹 조회 성공", response));
     }
 
@@ -48,8 +48,8 @@ public class ChallengeController {
      * 그룹 챌린지 생성
      */
     @PostMapping
-    public ResponseEntity<CreateGroupResponse> createChallenge(Long userId, @RequestBody CreateGroupRequest request) {
-        CreateGroupResponse response = challengeService.createGroupChallenge(request, userId);
+    public ResponseEntity<GroupCreateResponse> createChallenge(Long userId, @RequestBody GroupCreateRequest request) {
+        GroupCreateResponse response = challengeService.createGroupChallenge(request, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -57,7 +57,7 @@ public class ChallengeController {
      * 그룹 코드로 챌린지 참여
      */
     @PostMapping("/join")
-    public ResponseEntity<ChallengeResponseDto<Void>> joinByCode(Long userId, @RequestBody JoinGroupRequest request) {
+    public ResponseEntity<ChallengeResponseDto<Void>> joinByCode(Long userId, @RequestBody GroupJoinRequest request) {
         challengeService.joinByGroupCode(request.getGroupCode(), userId);
         return ResponseEntity.ok(new ChallengeResponseDto<>(200, "그룹 참여 완료", null));
     }
@@ -66,7 +66,7 @@ public class ChallengeController {
      * 그룹 챌린지 수정
      */
     @PatchMapping("/{id}")
-    public ResponseEntity<ChallengeResponseDto<Void>> updateChallenge(@PathVariable Long id, Long userId, @RequestBody CreateGroupRequest request) {
+    public ResponseEntity<ChallengeResponseDto<Void>> updateChallenge(@PathVariable Long id, Long userId, @RequestBody GroupCreateRequest request) {
         challengeService.updateChallenge(id, request, userId);
         return ResponseEntity.ok(new ChallengeResponseDto<>(200, "수정 완료", null));
     }
@@ -84,8 +84,8 @@ public class ChallengeController {
      * 그룹 챌린지 인증 (Check-in)
      */
     @PostMapping("/{id}/check-in")
-    public ResponseEntity<ChallengeResponseDto<CheckInResponse>> checkIn(@PathVariable Long id, Long userId, @RequestBody CheckInRequest request) {
-        CheckInResponse response = challengeService.checkIn(id, userId, request.getCurrentValue());
+    public ResponseEntity<ChallengeResponseDto<GroupCheckInResponse>> checkIn(@PathVariable Long id, Long userId, @RequestBody GroupCheckInRequest request) {
+        GroupCheckInResponse response = challengeService.checkIn(id, userId, request.getCurrentValue());
         return ResponseEntity.ok(new ChallengeResponseDto<>(200, "인증 성공", response));
     }
 }

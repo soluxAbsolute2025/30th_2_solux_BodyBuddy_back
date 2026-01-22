@@ -11,7 +11,7 @@ import lombok.Getter;
 @Getter
 @Builder
 @AllArgsConstructor
-public class SearchGroupResponse {
+public class GroupSearchResponse {
     private Long challengeId;
     private String title;
     private String description;

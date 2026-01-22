@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class CheckInResponse {
+public class GroupCheckInResponse {
     private Long challengeId;
     private String title;                 // "매일 10,000보 걷기"
     private Integer earnedPoints;         // "10 포인트를 획득하였습니다"

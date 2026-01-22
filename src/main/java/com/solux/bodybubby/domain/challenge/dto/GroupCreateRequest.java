@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 @Getter
 @Setter
 @NoArgsConstructor
-public class CreateGroupRequest {
+public class GroupCreateRequest {
     private String title;          // "함께 만보 걷기"
     private String description;    // "30일간 매일 10,000보 걷기"
     private Integer period;        // 기간(일 단위): 30

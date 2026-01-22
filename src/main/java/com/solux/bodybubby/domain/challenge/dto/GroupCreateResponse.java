@@ -7,7 +7,7 @@ import lombok.Getter;
 @Getter
 @Builder
 @AllArgsConstructor
-public class CreateGroupResponse {
+public class GroupCreateResponse {
     private int status;
     private Long groupId;
     private String groupCode;  // "ABC123Z" (자동 생성된 그룹 코드)
