@@ -86,6 +86,7 @@ public class MyPageService {
         return MyPageResponseDto.LevelInfoDto.builder()
                 .currentLevel(tier.ordinal() + 1) // Enum 순서를 레벨 숫자로 활용 (1~6)
                 .levelName(tier.getRankName())    // 등급 명칭
+                .levelImageUrl(tier.getIconUrl()) // 등급 이미지 URL 매핑
                 .currentExp(exp)
                 .nextLevelExp((tier == LevelTier.MASTER) ? exp : nextLevelExp)
                 .remainingExp(remainingExp)

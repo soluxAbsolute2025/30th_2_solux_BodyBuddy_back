@@ -44,6 +44,7 @@ public class MyPageResponseDto {
     public static class LevelInfoDto {
         private Integer currentLevel;    // 현재 레벨 숫자 (ex: 15)
         private String levelName;        // 레벨 등급명 (ex: 챌린저 버디)
+        private String levelImageUrl;    // 등급 이미지 URL
         private Integer currentExp;      // 현재 보유 경험치 (ex: 2450)
         private Integer nextLevelExp;    // 다음 레벨 달성 기준 경험치 (ex: 3000)
         private Integer remainingExp;    // 다음 레벨까지 남은 경험치 (ex: 550)
