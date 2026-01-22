@@ -24,4 +24,7 @@ public interface UserChallengeRepository extends JpaRepository<UserChallenge, Lo
 
     // 4. 특정 유저가 특정 챌린지에 이미 참여 중인지 확인
     Optional<UserChallenge> findByUserIdAndChallengeId(Long userId, Long challengeId);
+
+    // 5. 특정 유저의 모든 참여 정보 조회 (개인 챌린지 필터링용)
+    List<UserChallenge> findAllByUserId(Long userId);
 }
