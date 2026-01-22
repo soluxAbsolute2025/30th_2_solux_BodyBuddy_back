@@ -17,14 +17,17 @@ public class PersonalChallengeController {
 
     /**
      * 개인 챌린지 목록 조회
+     * GET /api/challenges/personal/ongoing
      */
     @GetMapping("/ongoing")
     public ResponseEntity<ChallengeResponseDto<PersonalListResponse>> getOngoingList(Long userId) {
+        // LoginUserArgumentResolver가 토큰에서 userId를 추출하여 주입.
         return ResponseEntity.ok(new ChallengeResponseDto<>(200, "조회 성공", personalChallengeService.getPersonalDashboard(userId)));
     }
 
     /**
      * 개인 챌린지 상세 조회
+     * GET /api/challenges/personal/ongoing/{id}
      */
     @GetMapping("/ongoing/{id}")
     public ResponseEntity<ChallengeResponseDto<PersonalDetailResponse>> getDetail(@PathVariable Long id, Long userId) {
@@ -33,7 +36,9 @@ public class PersonalChallengeController {
 
     /**
      * 개인 챌린지 생성
+     * POST /api/challenges/personal
      */
+    @PostMapping
     public ResponseEntity<ChallengeResponseDto<Long>> createPersonal(Long userId, @RequestBody PersonalCreateRequest request) {
         Long id = personalChallengeService.createPersonalChallenge(userId, request);
         return ResponseEntity.status(201).body(new ChallengeResponseDto<>(201, "생성 성공", id));
@@ -41,6 +46,7 @@ public class PersonalChallengeController {
 
     /**
      * 개인 챌린지 수정
+     * PATCH /api/challenges/personal/{id}
      */
     @PatchMapping("/{id}")
     public ResponseEntity<ChallengeResponseDto<Void>> updatePersonal(@PathVariable Long id, Long userId, @RequestBody PersonalUpdateRequest request) {
@@ -50,6 +56,7 @@ public class PersonalChallengeController {
 
     /**
      * 개인 챌린지 삭제
+     * DELETE /api/challenges/personal/{id}
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<ChallengeResponseDto<Void>> deletePersonal(@PathVariable Long id, Long userId) {
@@ -59,6 +66,7 @@ public class PersonalChallengeController {
 
     /**
      * 추천 챌린지 조회
+     * GET /api/challenges/personal/recommend
      */
     @GetMapping("/recommend")
     public ResponseEntity<ChallengeResponseDto<List<PersonalRecommendResponse>>> getRecommend() {
