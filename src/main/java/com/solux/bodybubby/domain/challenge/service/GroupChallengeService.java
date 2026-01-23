@@ -266,4 +266,36 @@ public class GroupChallengeService {
                 .groupAverageRate(BigDecimal.valueOf(userChallengeRepository.getGroupAverageRate(challengeId)))
                 .build();
     }
+
+    /**
+     * 완료된 그룹 챌린지 목록 조회
+     * 조건: 그룹 전체 평균 달성률(groupAverageRate)이 100%인 경우
+     */
+    public List<GroupCompletedResponse> getCompletedList(Long userId) {
+        // 1. 유저가 참여했던 모든 챌린지 정보 조회 (상태 상관없이 일단 조회)
+        List<UserChallenge> myAllChallenges = userChallengeRepository.findAllByUserId(userId);
+
+        return myAllChallenges.stream()
+                .filter(uc -> {
+                    // 2. 해당 챌린지의 그룹 평균 달성률 계산
+                    Double avgRate = userChallengeRepository.getGroupAverageRate(uc.getChallenge().getId());
+                    // 3. 평균이 100%인 것만 필터링 (정수 변환 후 비교)
+                    return avgRate != null && avgRate.intValue() == 100;
+                })
+                .map(uc -> {
+                    Challenge challenge = uc.getChallenge();
+                    return GroupCompletedResponse.builder()
+                            .challengeId(challenge.getId())
+                            .challengeType("GROUP")
+                            .title(challenge.getTitle())
+                            .description(challenge.getDescription())
+                            .imageUrl(challenge.getImageUrl())
+                            .completedAt(uc.getCompletedAt() != null ? uc.getCompletedAt().toLocalDate().toString() : "")
+                            .finalSuccessRate(uc.getAchievementRate().intValue())
+                            .acquiredPoints(challenge.getBaseRewardPoints() != null ? challenge.getBaseRewardPoints() : 500) // 챌린지 성공 보상
+                            .status("SUCCESS")
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
 }

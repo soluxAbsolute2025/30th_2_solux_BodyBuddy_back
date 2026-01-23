@@ -105,4 +105,13 @@ public class GroupChallengeController {
         GroupCheckInResponse response = challengeService.checkIn(id, userId);
         return ResponseEntity.ok(new ChallengeResponseDto<>(200, "인증 성공", response));
     }
+
+    /**
+     * 완료된 그룹 챌린지 목록 조회
+     */
+    @GetMapping("/completed") //
+    public ResponseEntity<ChallengeResponseDto<List<GroupCompletedResponse>>> getCompletedList(Long userId) {
+        List<GroupCompletedResponse> response = challengeService.getCompletedList(userId);
+        return ResponseEntity.ok(new ChallengeResponseDto<>(200, "완료한 챌린지 목록 조회 성공", response));
+    }
 }
