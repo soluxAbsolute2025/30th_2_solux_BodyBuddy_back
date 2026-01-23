@@ -2,6 +2,8 @@ package com.solux.bodybubby.domain.challenge.controller;
 
 import com.solux.bodybubby.domain.challenge.dto.*;
 import com.solux.bodybubby.domain.challenge.service.GroupChallengeService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -49,14 +51,18 @@ public class GroupChallengeController {
     /**
      * 그룹 챌린지 생성
      */
+    @Operation(summary = "그룹 챌린지 생성", description = "챌린지 정보(JSON)와 대표 이미지(File)를 함께 업로드합니다.")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<GroupCreateResponse> createChallenge(
             Long userId,
+
+            @Parameter(description = "챌린지 기본 정보 (JSON)", required = true)
             @RequestPart("request") GroupCreateRequest request, // JSON 데이터 파트
+            @Parameter(description = "챌린지 대표 이미지 (Optional)", required = false)
             @RequestPart(value = "image", required = false) MultipartFile image // 이미지 파일 파트
     ) {
         // 이미지를 처리하는 로직 필요시 image 넘기기
-        GroupCreateResponse response = challengeService.createGroupChallenge(request, userId);
+        GroupCreateResponse response = challengeService.createGroupChallenge(request, userId, image);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -98,5 +104,14 @@ public class GroupChallengeController {
         // 서비스 메서드 호출 시 인자값(value) 제거
         GroupCheckInResponse response = challengeService.checkIn(id, userId);
         return ResponseEntity.ok(new ChallengeResponseDto<>(200, "인증 성공", response));
+    }
+
+    /**
+     * 완료된 그룹 챌린지 목록 조회
+     */
+    @GetMapping("/completed") //
+    public ResponseEntity<ChallengeResponseDto<List<GroupCompletedResponse>>> getCompletedList(Long userId) {
+        List<GroupCompletedResponse> response = challengeService.getCompletedList(userId);
+        return ResponseEntity.ok(new ChallengeResponseDto<>(200, "완료한 챌린지 목록 조회 성공", response));
     }
 }
