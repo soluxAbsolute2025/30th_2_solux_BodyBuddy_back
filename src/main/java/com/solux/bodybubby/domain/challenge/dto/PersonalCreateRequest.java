@@ -19,5 +19,5 @@ public class PersonalCreateRequest {
     private String unit;           // "steps", "count", "ml", "minutes"
     private String category;       // "DAILY", "WEEKLY"
     private Visibility visibility;
-    private Integer expectedReward; // 예상 보상 포인트
+    private Integer estimatedReward; // 예상 보상 포인트
 }

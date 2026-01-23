@@ -29,7 +29,7 @@ public class PersonalListResponse {
         private String category;      // DAILY(초록), WEEKLY(파랑)
         private Integer progressValue;
         private Integer totalValue;
-        private Integer expectedReward;
+        private Integer estimatedReward;
         private Integer dday;
         private String colorCode;
     }
