@@ -10,7 +10,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 
-public class OngoingGroupDetailResponse {
+public class GroupDetailResponse {
     private ChallengeInfo challengeInfo;    // 챌린지 기본 정보
     private MyStatus myStatus;              // 내 현재 상태
     private BigDecimal groupAverageRate;    // 그룹 전체 평균 진행률
@@ -21,14 +21,17 @@ public class OngoingGroupDetailResponse {
     @AllArgsConstructor
     @NoArgsConstructor(access = AccessLevel.PROTECTED)
     public static class ChallengeInfo {
+        private Long challengeId;
         private String title;               // "친구들과 다이어트"
         private String description;         // 챌린지 내용
+        private String imageUrl;
         private String startDate;           // "2025. 11. 27"
         private String endDate;             // "2025. 12. 15"
         private String groupCode;           // "DIET2025"
         private Integer currentParticipantCount; // 4명
         private Integer maxParticipantCount;     // 8명
         private boolean isPublic;           // 친구 공개 여부
+        private Integer expectedRewardPoints;
     }
 
     @Getter

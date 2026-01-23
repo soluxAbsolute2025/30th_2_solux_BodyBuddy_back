@@ -9,7 +9,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 
-public class OngoingGroupListResponse {
+public class GroupListResponse {
     private Long challengeId;
     private String title;                 // 챌린지명
     private String imageUrl;              // 배경 이미지

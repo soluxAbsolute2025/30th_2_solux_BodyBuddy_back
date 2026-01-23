@@ -15,8 +15,9 @@ public interface UserChallengeRepository extends JpaRepository<UserChallenge, Lo
     // 1. 유저가 현재 참여 중인 '진행 중'인 챌린지만 조회 (목표 달성 여부 포함)
     List<UserChallenge> findAllByUserIdAndStatus(Long userId, String status);
 
-    // 2. 실시간 순위 리스트: 달성률(achievementRate) 기준 내림차순 정렬
-    List<UserChallenge> findAllByChallengeIdOrderByAchievementRateDesc(Long challengeId);
+    // 2. 1순위: 달성률 내림차순, 2순위: 참여 시간 오름차순 (먼저 온 사람이 높은 순위)
+    // achievementRate가 같으면 joinedAt(참여시간)이 빠른 순서대로 정렬
+    List<UserChallenge> findAllByChallengeIdOrderByAchievementRateDescJoinedAtAsc(Long challengeId);
 
     // 3. 특정 챌린지의 그룹 전체 평균 달성률 계산
     @Query("SELECT AVG(uc.achievementRate) FROM UserChallenge uc WHERE uc.challenge.id = :challengeId")
@@ -24,4 +25,7 @@ public interface UserChallengeRepository extends JpaRepository<UserChallenge, Lo
 
     // 4. 특정 유저가 특정 챌린지에 이미 참여 중인지 확인
     Optional<UserChallenge> findByUserIdAndChallengeId(Long userId, Long challengeId);
+
+    // 5. 특정 유저의 모든 참여 정보 조회 (개인 챌린지 필터링용)
+    List<UserChallenge> findAllByUserId(Long userId);
 }

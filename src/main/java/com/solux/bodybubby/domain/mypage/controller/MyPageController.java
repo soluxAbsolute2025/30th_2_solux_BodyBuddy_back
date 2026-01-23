@@ -1,9 +1,6 @@
 package com.solux.bodybubby.domain.mypage.controller;
 
-import com.solux.bodybubby.domain.mypage.dto.BadgeCollectionDto;
-import com.solux.bodybubby.domain.mypage.dto.MyPageResponseDto;
-import com.solux.bodybubby.domain.mypage.dto.MyPostDto;
-import com.solux.bodybubby.domain.mypage.dto.PrivacySettingsDto;
+import com.solux.bodybubby.domain.mypage.dto.*;
 import com.solux.bodybubby.domain.mypage.service.MyPageService;
 import com.solux.bodybubby.global.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +31,19 @@ public class MyPageController {
     public ResponseEntity<MyPageResponseDto> getMyPage(@AuthenticationPrincipal CustomUserDetails userDetails) {
         MyPageResponseDto response = myPageService.getMyPageInfo(userDetails.getId());
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * [버디 등급 조회] GET /api/mypage/levels
+     */
+    @GetMapping("/levels") //
+    public ResponseEntity<LevelResponseDto> getBuddyLevels(
+            @AuthenticationPrincipal CustomUserDetails userDetails) { // 토큰에서 유저 정보 추출
+
+        // 서비스에서 조립된 전체 등급 및 내 정보 DTO를 가져옵니다.
+        LevelResponseDto response = myPageService.getBuddyLevels(userDetails.getId());
+
+        return ResponseEntity.ok(response); // 200 OK 응답 반환
     }
 
     /**
