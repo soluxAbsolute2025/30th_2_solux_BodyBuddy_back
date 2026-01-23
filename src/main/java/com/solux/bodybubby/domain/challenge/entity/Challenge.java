@@ -31,6 +31,8 @@ public class Challenge {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    private String imageUrl; // S3 업로드 이미지 URL
+
     private String privacyScope;     // 공개 범위 설정 (FRIENDS, PUBLIC, PRIVATE)
 
     private String targetType;         // DAILY, TOTAL
@@ -64,6 +66,11 @@ public class Challenge {
         // 그룹 챌린지일 경우 고유 코드 8자리 자동 생성
         if (this.groupCode == null || this.groupCode.isEmpty()) {
             this.groupCode = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        }
+
+        // 이미지 URL 기본값 설정 (이미지가 없을 경우 대비)
+        if (this.imageUrl == null) {
+            this.imageUrl = "https://default-image-url.com/challenge.png";
         }
 
         // 디자인상 입력받지 않는 필드들에 대한 '기본값' 자동 할당

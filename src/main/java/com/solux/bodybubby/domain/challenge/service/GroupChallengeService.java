@@ -10,9 +10,11 @@ import com.solux.bodybubby.domain.challenge.repository.ChallengeRepository;
 import com.solux.bodybubby.domain.challenge.repository.UserChallengeRepository;
 import com.solux.bodybubby.domain.user.entity.User;
 import com.solux.bodybubby.domain.user.repository.UserRepository;
+import com.solux.bodybubby.s3Test.S3Service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -30,6 +32,7 @@ public class GroupChallengeService {
     private final ChallengeRepository challengeRepository;
     private final UserChallengeRepository userChallengeRepository;
     private final ChallengeLogRepository challengeLogRepository;
+    private final S3Service s3Service;
 
     /**
      * 참여 중 그룹 챌린지 목록 조회
@@ -40,7 +43,7 @@ public class GroupChallengeService {
         return userChallenges.stream().map(uc -> {
             Challenge challenge = uc.getChallenge();
             List<GroupListResponse.ParticipantProfile> topProfiles =
-                    userChallengeRepository.findAllByChallengeIdOrderByAchievementRateDesc(challenge.getId())
+                    userChallengeRepository.findAllByChallengeIdOrderByAchievementRateDescJoinedAtAsc(challenge.getId())
                             .stream().limit(3)
                             .map(p -> GroupListResponse.ParticipantProfile.builder()
                                     .profileImageUrl(p.getUser().getProfileImageUrl()).build())
@@ -49,7 +52,9 @@ public class GroupChallengeService {
             long remainingDays = ChronoUnit.DAYS.between(LocalDate.now(), challenge.getEndDate());
 
             return GroupListResponse.builder()
-                    .challengeId(challenge.getId()).title(challenge.getTitle())
+                    .challengeId(challenge.getId())
+                    .title(challenge.getTitle())
+                    .imageUrl(challenge.getImageUrl()) // 목록 조회 시 이미지 URL 포함
                     .myRank(uc.getCurrentRank())
                     .participantCount((int) userChallengeRepository.countByChallengeId(challenge.getId()))
                     .remainingDays((int) remainingDays)
@@ -65,7 +70,7 @@ public class GroupChallengeService {
                 .orElseThrow(() -> new IllegalArgumentException("참여 중인 챌린지가 아닙니다."));
 
         Challenge challenge = myUc.getChallenge();
-        List<UserChallenge> rankings = userChallengeRepository.findAllByChallengeIdOrderByAchievementRateDesc(challengeId);
+        List<UserChallenge> rankings = userChallengeRepository.findAllByChallengeIdOrderByAchievementRateDescJoinedAtAsc(challenge.getId());
 
         // [보완] 평균 달성률이 null일 경우(참여자가 없을 때 등) 0.0으로 처리하여 에러 방지
         Double avgRate = userChallengeRepository.getGroupAverageRate(challengeId);
@@ -86,6 +91,7 @@ public class GroupChallengeService {
                         .challengeId(challenge.getId())
                         .title(challenge.getTitle())
                         .description(challenge.getDescription())
+                        .imageUrl(challenge.getImageUrl()) // 목록 조회 시 이미지 URL 포함
                         .startDate(challenge.getStartDate().toString())
                         .endDate(challenge.getEndDate().toString())
                         .groupCode(challenge.getGroupCode())
@@ -107,7 +113,10 @@ public class GroupChallengeService {
         return challengeRepository.findAll().stream()
                 .filter(c -> c.getStatus() == ChallengeStatus.RECRUITING)
                 .map(c -> GroupSearchResponse.builder()
-                        .challengeId(c.getId()).title(c.getTitle()).description(c.getDescription())
+                        .challengeId(c.getId())
+                        .title(c.getTitle())
+                        .description(c.getDescription())
+                        .imageUrl(c.getImageUrl())
                         .currentParticipants((int) userChallengeRepository.countByChallengeId(c.getId()))
                         .maxParticipants(c.getMaxParticipants()).challengeType(c.getChallengeType()).build())
                 .collect(Collectors.toList());
@@ -117,7 +126,7 @@ public class GroupChallengeService {
      * 그룹 챌린지 생성
      */
     @Transactional
-    public GroupCreateResponse createGroupChallenge(GroupCreateRequest request, Long userId) {
+    public GroupCreateResponse createGroupChallenge(GroupCreateRequest request, Long userId, MultipartFile image) {
         User creator = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
@@ -126,6 +135,8 @@ public class GroupChallengeService {
             throw new IllegalArgumentException("챌린지 기간은 최소 7일 이상으로 설정해야 합니다.");
         }
 
+        String uploadedImageUrl = s3Service.uploadFile(image);
+
         LocalDate startDate = LocalDate.now();
         LocalDate endDate = startDate.plusDays(request.getPeriod());
 
@@ -133,6 +144,7 @@ public class GroupChallengeService {
                 .creator(creator)
                 .title(request.getTitle())
                 .description(request.getDescription())
+                .imageUrl(uploadedImageUrl)
                 .period(request.getPeriod())
                 .privacyScope(request.getPrivacyScope())
                 .startDate(startDate)
@@ -253,5 +265,37 @@ public class GroupChallengeService {
                         .build())
                 .groupAverageRate(BigDecimal.valueOf(userChallengeRepository.getGroupAverageRate(challengeId)))
                 .build();
+    }
+
+    /**
+     * 완료된 그룹 챌린지 목록 조회
+     * 조건: 그룹 전체 평균 달성률(groupAverageRate)이 100%인 경우
+     */
+    public List<GroupCompletedResponse> getCompletedList(Long userId) {
+        // 1. 유저가 참여했던 모든 챌린지 정보 조회 (상태 상관없이 일단 조회)
+        List<UserChallenge> myAllChallenges = userChallengeRepository.findAllByUserId(userId);
+
+        return myAllChallenges.stream()
+                .filter(uc -> {
+                    // 2. 해당 챌린지의 그룹 평균 달성률 계산
+                    Double avgRate = userChallengeRepository.getGroupAverageRate(uc.getChallenge().getId());
+                    // 3. 평균이 100%인 것만 필터링 (정수 변환 후 비교)
+                    return avgRate != null && avgRate.intValue() == 100;
+                })
+                .map(uc -> {
+                    Challenge challenge = uc.getChallenge();
+                    return GroupCompletedResponse.builder()
+                            .challengeId(challenge.getId())
+                            .challengeType("GROUP")
+                            .title(challenge.getTitle())
+                            .description(challenge.getDescription())
+                            .imageUrl(challenge.getImageUrl())
+                            .completedAt(uc.getCompletedAt() != null ? uc.getCompletedAt().toLocalDate().toString() : "")
+                            .finalSuccessRate(uc.getAchievementRate().intValue())
+                            .acquiredPoints(challenge.getBaseRewardPoints() != null ? challenge.getBaseRewardPoints() : 500) // 챌린지 성공 보상
+                            .status("SUCCESS")
+                            .build();
+                })
+                .collect(Collectors.toList());
     }
 }
