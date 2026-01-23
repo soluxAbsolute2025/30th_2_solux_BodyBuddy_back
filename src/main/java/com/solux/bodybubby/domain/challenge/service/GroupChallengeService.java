@@ -1,10 +1,7 @@
 package com.solux.bodybubby.domain.challenge.service;
 
 import com.solux.bodybubby.domain.challenge.dto.*;
-import com.solux.bodybubby.domain.challenge.entity.Challenge;
-import com.solux.bodybubby.domain.challenge.entity.ChallengeLog;
-import com.solux.bodybubby.domain.challenge.entity.ChallengeStatus;
-import com.solux.bodybubby.domain.challenge.entity.UserChallenge;
+import com.solux.bodybubby.domain.challenge.entity.*;
 import com.solux.bodybubby.domain.challenge.repository.ChallengeLogRepository;
 import com.solux.bodybubby.domain.challenge.repository.ChallengeRepository;
 import com.solux.bodybubby.domain.challenge.repository.UserChallengeRepository;
@@ -19,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -33,6 +31,7 @@ public class GroupChallengeService {
     private final UserChallengeRepository userChallengeRepository;
     private final ChallengeLogRepository challengeLogRepository;
     private final S3Service s3Service;
+    private static final int DAILY_CHECK_IN_REWARD = 10;
 
     /**
      * 참여 중 그룹 챌린지 목록 조회
@@ -97,7 +96,7 @@ public class GroupChallengeService {
                         .groupCode(challenge.getGroupCode())
                         .currentParticipantCount(rankings.size())
                         .maxParticipantCount(challenge.getMaxParticipants())
-                        .isPublic(!"PRIVATE".equals(challenge.getPrivacyScope()))
+                        .isPublic(challenge.getVisibility() != Visibility.SECRET)
                         .build())
                 .myStatus(GroupDetailResponse.MyStatus.builder()
                         .myAchievementRate(myUc.getAchievementRate())
@@ -111,6 +110,7 @@ public class GroupChallengeService {
      */
     public List<GroupSearchResponse> searchNewGroups() {
         return challengeRepository.findAll().stream()
+                .filter(c -> c.getVisibility() == Visibility.PUBLIC)
                 .filter(c -> c.getStatus() == ChallengeStatus.RECRUITING)
                 .map(c -> GroupSearchResponse.builder()
                         .challengeId(c.getId())
@@ -146,7 +146,7 @@ public class GroupChallengeService {
                 .description(request.getDescription())
                 .imageUrl(uploadedImageUrl)
                 .period(request.getPeriod())
-                .privacyScope(request.getPrivacyScope())
+                .visibility(request.getVisibility() != null ? request.getVisibility() : Visibility.PUBLIC)
                 .startDate(startDate)
                 .endDate(endDate)
                 .maxParticipants(request.getMaxParticipants())
@@ -219,7 +219,7 @@ public class GroupChallengeService {
         if (!challenge.getCreator().getId().equals(userId)) throw new IllegalStateException("권한이 없습니다.");
 
         // [보완] 실제 데이터 업데이트 로직 추가 (엔티티에 update 메서드 필요)
-        challenge.update(request.getTitle(), request.getDescription(), request.getPeriod(), request.getMaxParticipants(), request.getPrivacyScope());
+        challenge.update(request.getTitle(), request.getDescription(), request.getPeriod(), request.getMaxParticipants(), request.getVisibility());
     }
 
     /**
@@ -245,20 +245,29 @@ public class GroupChallengeService {
             throw new IllegalStateException("오늘은 이미 인증을 완료했습니다.");
         }
 
-        // 2. 인증 로그 기록 (수치 대신 고정값 1 저장 가능)
+        // 유저 포인트 실시간 지급 (인증할 때마다 10p)
+        User user = uc.getUser();
+        user.addPoints(DAILY_CHECK_IN_REWARD);
+
+        // 인증 로그 기록 (수치 대신 고정값 1 저장 가능)
         challengeLogRepository.save(ChallengeLog.builder()
                 .userChallenge(uc).logDate(LocalDate.now()).valueAchieved(BigDecimal.ONE).build());
 
         // 3. 일수 기반 달성률 업데이트 호출
         uc.updateGroupProgress();
 
-        // 4. [추가] 실시간 순위 업데이트 (중요!)
+        // 100% 달성 시 전체 보상 보너스 지급
+        if ("COMPLETED".equals(uc.getStatus())) {
+            user.addPoints(uc.getChallenge().getBaseRewardPoints());
+        }
+
+        // 실시간 순위 업데이트 (중요!)
         updateRanks(challengeId);
 
         return GroupCheckInResponse.builder()
                 .challengeId(challengeId)
                 .title(uc.getChallenge().getTitle())
-                .earnedPoints(10)
+                .earnedPoints(DAILY_CHECK_IN_REWARD)
                 .myStatus(GroupCheckInResponse.MyStatusUpdate.builder()
                         .updatedAchievementRate(uc.getAchievementRate()) // 정수형 달성률
                         .currentRank(uc.getCurrentRank())
@@ -275,6 +284,8 @@ public class GroupChallengeService {
         // 1. 유저가 참여했던 모든 챌린지 정보 조회 (상태 상관없이 일단 조회)
         List<UserChallenge> myAllChallenges = userChallengeRepository.findAllByUserId(userId);
 
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd");
+
         return myAllChallenges.stream()
                 .filter(uc -> {
                     // 2. 해당 챌린지의 그룹 평균 달성률 계산
@@ -290,7 +301,7 @@ public class GroupChallengeService {
                             .title(challenge.getTitle())
                             .description(challenge.getDescription())
                             .imageUrl(challenge.getImageUrl())
-                            .completedAt(uc.getCompletedAt() != null ? uc.getCompletedAt().toLocalDate().toString() : "")
+                            .completedAt(uc.getCompletedAt() != null ? uc.getCompletedAt().format(formatter) : "")
                             .finalSuccessRate(uc.getAchievementRate().intValue())
                             .acquiredPoints(challenge.getBaseRewardPoints() != null ? challenge.getBaseRewardPoints() : 500) // 챌린지 성공 보상
                             .status("SUCCESS")
