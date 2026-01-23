@@ -45,10 +45,10 @@ public class UserChallenge {
     private LocalDateTime completedAt;
 
     /**
-     * 실시간 진행도 및 달성률 업데이트 로직
+     * 개인챌린지 달성률 업데이트 로직
      * 달성률 = (현재량 / 목표량) * 100
      */
-    public void updateProgress(BigDecimal achievedValue) {
+    public void updatePersonalProgress(BigDecimal achievedValue) {
         this.currentProgress = this.currentProgress.add(achievedValue);
 
         BigDecimal target = this.challenge.getTargetValue();
@@ -65,5 +65,36 @@ public class UserChallenge {
             this.status = "COMPLETED";
             this.completedAt = LocalDateTime.now();
         }
+    }
+
+    /**
+     * 그룹챌린지 달성률 업데이트 로직
+     * 달성률 = (현재량 / 목표량) * 100
+     */
+    public void updateGroupProgress() {
+        // 1. 인증한 일수(currentProgress)를 1 증가시킵니다.
+        this.currentProgress = this.currentProgress.add(BigDecimal.ONE);
+
+        // 2. 달성률 = (인증 일수 / 전체 기간) * 100
+        Integer period = this.challenge.getPeriod();
+        if (period != null && period > 0) {
+            this.achievementRate = this.currentProgress
+                    .divide(new BigDecimal(period), 4, RoundingMode.HALF_UP)
+                    .multiply(new BigDecimal("100"))
+                    .setScale(0, RoundingMode.DOWN); // 소수점 버림 (정수 표기)
+        }
+
+        // 100% 도달 시 완료 처리
+        if (this.achievementRate.compareTo(new BigDecimal("100")) >= 0) {
+            this.status = "COMPLETED";
+            this.completedAt = LocalDateTime.now();
+        }
+    }
+
+    /**
+     * 그룹 챌린지 실시간 순위 정보 갱신
+     */
+    public void updateRank(Integer rank) {
+        this.currentRank = rank;
     }
 }
