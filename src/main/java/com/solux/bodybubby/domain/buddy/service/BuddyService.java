@@ -1,10 +1,13 @@
 package com.solux.bodybubby.domain.buddy.service;
 
+import com.solux.bodybubby.domain.buddy.dto.response.AchievementDto;
 import com.solux.bodybubby.domain.buddy.dto.response.BuddyDetailResponse;
 import com.solux.bodybubby.domain.buddy.dto.response.BuddyListResponse;
 import com.solux.bodybubby.domain.buddy.entity.Buddy;
 import com.solux.bodybubby.domain.buddy.entity.BuddyStatus;
 import com.solux.bodybubby.domain.buddy.repository.BuddyRepository;
+import com.solux.bodybubby.domain.home.dto.response.HomeResponseDTO;
+import com.solux.bodybubby.domain.home.service.HomeService;
 import com.solux.bodybubby.domain.user.entity.User;
 import com.solux.bodybubby.domain.user.repository.UserRepository;
 import com.solux.bodybubby.global.exception.BusinessException;
@@ -23,6 +26,7 @@ public class BuddyService {
 
     private final BuddyRepository buddyRepository;
     private final UserRepository userRepository;
+    private final HomeService homeService;
 
     public BuddyListResponse getBuddyList(Long userId) {
         List<BuddyListResponse.BuddyInfo> myBuddies = fetchMyBuddies(userId);
@@ -74,7 +78,7 @@ public class BuddyService {
         return getBuddyDetailResponse(myId, targetUser);
     }
 
-    // 공통 변환 로직
+    // 공통 변환 로직 수정
     private BuddyDetailResponse getBuddyDetailResponse(Long myId, User targetUser) {
         String status = buddyRepository.findRelation(myId, targetUser.getId())
                 .map(buddy -> {
@@ -84,16 +88,34 @@ public class BuddyService {
                 })
                 .orElse("NONE");
 
+        // 1. n분 전 활동 (엔티티 수정 시간을 임시 활동 시간으로 활용)
+        String lastActivityTime = calculateLastActivity(targetUser.getUpdatedAt());
+
+        // 2. 목표 달성률 계산 (User 엔티티의 Onboarding 정보 활용)
+        HomeResponseDTO homeData = homeService.getHomeData(targetUser.getId());
+
         return new BuddyDetailResponse(
                 targetUser.getId(),
                 targetUser.getLoginId(),
                 targetUser.getNickname(),
                 targetUser.getLevel(),
                 targetUser.getProfileImageUrl(),
-                targetUser.getIntroduction(),
-                targetUser.getCompletedChallengesCount(),
-                status
+                status,
+                lastActivityTime,
+                homeData
         );
+    }
+
+    // 활동 시간 계산기 (변화 없음)
+    private String calculateLastActivity(java.time.LocalDateTime lastTime) {
+        if (lastTime == null) return "활동 정보 없음";
+        java.time.Duration duration = java.time.Duration.between(lastTime, java.time.LocalDateTime.now());
+        long seconds = duration.getSeconds();
+
+        if (seconds < 60) return "방금 전 활동";
+        if (seconds < 3600) return (seconds / 60) + "분 전 활동";
+        if (seconds < 86400) return (seconds / 3600) + "시간 전 활동";
+        return (seconds / 86400) + "일 전 활동";
     }
 
     // 버디 요청 보내기
