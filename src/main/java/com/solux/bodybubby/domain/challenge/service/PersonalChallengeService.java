@@ -211,11 +211,11 @@ public class PersonalChallengeService {
      * 개인 챌린지 인증 (Check-in)
      */
     @Transactional
-    public void checkIn(Long challengeId, Long userId) {
+    public PersonalCheckInResponse checkIn(Long challengeId, Long userId) {
         UserChallenge uc = userChallengeRepository.findByUserIdAndChallengeId(userId, challengeId)
                 .orElseThrow(() -> new IllegalArgumentException("참여 정보를 찾을 수 없습니다."));
 
-        // 1. 하루 1회 중복 인증 방지
+        // 1. 중복 인증 방지
         if (challengeLogRepository.existsByUserChallengeAndLogDate(uc, LocalDate.now())) {
             throw new IllegalStateException("오늘은 이미 인증을 완료했습니다.");
         }
@@ -223,20 +223,29 @@ public class PersonalChallengeService {
         User user = uc.getUser();
         Challenge challenge = uc.getChallenge();
 
-        // 2. [매일 보상] 인증할 때마다 고정 포인트(10 XP) 즉시 지급
+        // 2. 매일 고정 보상 지급 (10 XP)
         user.addPoints(DAILY_CHECK_IN_REWARD);
 
-        // 3. 인증 로그 기록
-        challengeLogRepository.save(ChallengeLog.builder()
+        // 3. 로그 저장
+        ChallengeLog log = challengeLogRepository.save(ChallengeLog.builder()
                 .userChallenge(uc).logDate(LocalDate.now()).valueAchieved(BigDecimal.ONE).build());
 
-        // 4. 진행률 및 상태 업데이트
+        // 4. 달성률 업데이트 로직 실행
         uc.updateCheckInProgress();
 
-        // 5. [최종 보상] 챌린지가 방금 막 완료(COMPLETED)되었다면 전체 보상 지급
+        // 5. 완수 시 보너스 포인트 지급 (DB에만 반영)
         if ("COMPLETED".equals(uc.getStatus())) {
             user.addPoints(challenge.getBaseRewardPoints());
         }
+
+        // 6. 명세서(image_6c1fb7.png) 규격에 맞춰 결과 반환
+        return PersonalCheckInResponse.builder()
+                .logId(log.getId())
+                .currentProgress(uc.getCurrentProgress().intValue())
+                .achievementRate(uc.getAchievementRate().intValue())
+                .earnedPoints(DAILY_CHECK_IN_REWARD) // 시안대로 10 XP 반환
+                .isCompleted("COMPLETED".equals(uc.getStatus()))
+                .build();
     }
 
     /**
