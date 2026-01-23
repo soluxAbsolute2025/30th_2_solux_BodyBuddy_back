@@ -10,9 +10,11 @@ import com.solux.bodybubby.domain.challenge.repository.ChallengeRepository;
 import com.solux.bodybubby.domain.challenge.repository.UserChallengeRepository;
 import com.solux.bodybubby.domain.user.entity.User;
 import com.solux.bodybubby.domain.user.repository.UserRepository;
+import com.solux.bodybubby.s3Test.S3Service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -30,6 +32,7 @@ public class GroupChallengeService {
     private final ChallengeRepository challengeRepository;
     private final UserChallengeRepository userChallengeRepository;
     private final ChallengeLogRepository challengeLogRepository;
+    private final S3Service s3Service;
 
     /**
      * 참여 중 그룹 챌린지 목록 조회
@@ -49,7 +52,9 @@ public class GroupChallengeService {
             long remainingDays = ChronoUnit.DAYS.between(LocalDate.now(), challenge.getEndDate());
 
             return GroupListResponse.builder()
-                    .challengeId(challenge.getId()).title(challenge.getTitle())
+                    .challengeId(challenge.getId())
+                    .title(challenge.getTitle())
+                    .imageUrl(challenge.getImageUrl()) // 목록 조회 시 이미지 URL 포함
                     .myRank(uc.getCurrentRank())
                     .participantCount((int) userChallengeRepository.countByChallengeId(challenge.getId()))
                     .remainingDays((int) remainingDays)
@@ -86,6 +91,7 @@ public class GroupChallengeService {
                         .challengeId(challenge.getId())
                         .title(challenge.getTitle())
                         .description(challenge.getDescription())
+                        .imageUrl(challenge.getImageUrl()) // 목록 조회 시 이미지 URL 포함
                         .startDate(challenge.getStartDate().toString())
                         .endDate(challenge.getEndDate().toString())
                         .groupCode(challenge.getGroupCode())
@@ -107,7 +113,10 @@ public class GroupChallengeService {
         return challengeRepository.findAll().stream()
                 .filter(c -> c.getStatus() == ChallengeStatus.RECRUITING)
                 .map(c -> GroupSearchResponse.builder()
-                        .challengeId(c.getId()).title(c.getTitle()).description(c.getDescription())
+                        .challengeId(c.getId())
+                        .title(c.getTitle())
+                        .description(c.getDescription())
+                        .imageUrl(c.getImageUrl())
                         .currentParticipants((int) userChallengeRepository.countByChallengeId(c.getId()))
                         .maxParticipants(c.getMaxParticipants()).challengeType(c.getChallengeType()).build())
                 .collect(Collectors.toList());
@@ -117,7 +126,7 @@ public class GroupChallengeService {
      * 그룹 챌린지 생성
      */
     @Transactional
-    public GroupCreateResponse createGroupChallenge(GroupCreateRequest request, Long userId) {
+    public GroupCreateResponse createGroupChallenge(GroupCreateRequest request, Long userId, MultipartFile image) {
         User creator = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
@@ -126,6 +135,8 @@ public class GroupChallengeService {
             throw new IllegalArgumentException("챌린지 기간은 최소 7일 이상으로 설정해야 합니다.");
         }
 
+        String uploadedImageUrl = s3Service.uploadFile(image);
+
         LocalDate startDate = LocalDate.now();
         LocalDate endDate = startDate.plusDays(request.getPeriod());
 
@@ -133,6 +144,7 @@ public class GroupChallengeService {
                 .creator(creator)
                 .title(request.getTitle())
                 .description(request.getDescription())
+                .imageUrl(uploadedImageUrl)
                 .period(request.getPeriod())
                 .privacyScope(request.getPrivacyScope())
                 .startDate(startDate)

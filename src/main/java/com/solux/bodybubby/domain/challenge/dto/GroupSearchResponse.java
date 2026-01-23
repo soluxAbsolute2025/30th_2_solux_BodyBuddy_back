@@ -15,6 +15,7 @@ public class GroupSearchResponse {
     private Long challengeId;
     private String title;
     private String description;
+    private String imageUrl;
     private Integer currentParticipants;
     private Integer maxParticipants;
     private String challengeType;

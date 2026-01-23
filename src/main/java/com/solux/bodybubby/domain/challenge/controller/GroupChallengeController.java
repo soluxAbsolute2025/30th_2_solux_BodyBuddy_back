@@ -56,7 +56,7 @@ public class GroupChallengeController {
             @RequestPart(value = "image", required = false) MultipartFile image // 이미지 파일 파트
     ) {
         // 이미지를 처리하는 로직 필요시 image 넘기기
-        GroupCreateResponse response = challengeService.createGroupChallenge(request, userId);
+        GroupCreateResponse response = challengeService.createGroupChallenge(request, userId, image);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
