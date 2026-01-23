@@ -33,7 +33,8 @@ public class Challenge {
 
     private String imageUrl; // S3 업로드 이미지 URL
 
-    private String privacyScope;     // 공개 범위 설정 (FRIENDS, PUBLIC, PRIVATE)
+    @Enumerated(EnumType.STRING)
+    private Visibility visibility;  // 공개 범위 설정 (PUBLIC, SECRET)
 
     private String targetType;         // DAILY, TOTAL
     private BigDecimal targetValue;
@@ -91,11 +92,31 @@ public class Challenge {
         this.updatedAt = LocalDateTime.now();
     }
 
+    // 그룹챌린지 업데이트
     public void update(String title, String description, Integer period, Integer maxParticipants, String privacyScope) {
         if (title != null) this.title = title;
         if (description != null) this.description = description;
         if (period != null) this.period = period;
         if (maxParticipants != null) this.maxParticipants = maxParticipants;
-        if (privacyScope != null) this.privacyScope = privacyScope;
+        if (visibility != null) this.visibility = visibility;
+    }
+
+    /**
+     * 개인 챌린지 정보 업데이트 메서드
+     */
+    public void updatePersonal(String title, String description, Integer targetDays, BigDecimal dailyGoal, String unit, Visibility visibility) {
+        if (title != null) this.title = title;
+        if (description != null) this.description = description;
+        if (targetDays != null) this.endDate = LocalDate.now().plusDays(targetDays); // 기간 수정 시 종료일 재계산
+        if (dailyGoal != null) this.targetValue = dailyGoal;
+        if (unit != null) this.targetUnit = unit;
+        if (visibility != null) this.visibility = visibility;
+    }
+
+    /**
+     * 이미지 URL 업데이트
+     */
+    public void updateImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 }
