@@ -7,9 +7,11 @@ import com.solux.bodybubby.global.security.CustomUserDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/users")
@@ -75,12 +77,14 @@ public class UserController {
         return ResponseEntity.ok("온보딩 정보 등록 완료");
     }
 
-    // 프로필 정보 수정 (텍스트)
-    @PatchMapping("/profile")
+    // 프로필 정보 수정 (텍스트 + 이미지)
+    @PatchMapping(value = "/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> updateProfile(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @Valid @RequestBody UserRequestDto.ProfileUpdate dto) {
-        userService.updateProfile(userDetails.getId(), dto);
+            @RequestPart(value = "request", required = false) @Valid UserRequestDto.ProfileUpdate dto,
+            @RequestPart(value = "image", required = false) MultipartFile image) {
+
+        userService.updateProfile(userDetails.getId(), dto, image);
         return ResponseEntity.ok("프로필 수정 완료");
     }
 
