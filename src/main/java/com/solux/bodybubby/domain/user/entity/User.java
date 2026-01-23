@@ -171,5 +171,13 @@ public class User extends BaseTimeEntity {
     @Column(name = "daily_diet_goal")
     private Integer dailyDietGoal;
 
+    //보상상점 관련 엔티티 코드들 
+    @Builder.Default
+    private Integer currentPoints = 0; // 필드 추가
 
+    public void minusPoints(int amount) {
+    if (this.currentPoints < amount) throw new IllegalStateException("포인트 부족");
+    this.currentPoints -= amount;
+}
+    
 }
