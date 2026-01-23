@@ -1,6 +1,8 @@
 package com.solux.bodybubby.domain.user.service;
 
+import com.solux.bodybubby.domain.mypage.entity.LevelTier;
 import com.solux.bodybubby.domain.user.dto.UserRequestDto;
+import com.solux.bodybubby.domain.user.dto.UserResponseDto;
 import com.solux.bodybubby.domain.user.entity.RefreshToken;
 import com.solux.bodybubby.domain.user.entity.User;
 import com.solux.bodybubby.domain.user.repository.RefreshTokenRepository;
@@ -105,6 +107,29 @@ public class UserService {
                 "logout",
                 java.time.Duration.ofMillis(expiration)
         );
+    }
+
+    /**
+     * [회원정보 간단 조회]
+     * 액세스 토큰으로 식별된 유저의 핵심 UI 정보를 조회합니다.
+     */
+    public UserResponseDto.SimpleInfo getSimpleInfo(Long userId) {
+        // 1. 유저 조회
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        // 2. 현재 포인트를 기반으로 티어(LevelTier) 계산
+        LevelTier tier = LevelTier.getTier(user.getCurrentExp());
+
+        // 3. 명세서(image_21f77f.png) 구조에 맞춰 반환
+        return UserResponseDto.SimpleInfo.builder()
+                .userId(user.getId())
+                .nickname(user.getNickname())
+                .profileImageUrl(user.getProfileImageUrl())
+                .currentLevel(tier.ordinal() + 1)
+                .levelName(tier.getRankName())
+                .levelImageUrl(tier.getIconUrl()) // LevelTier에 추가했던 iconUrl 매핑
+                .build();
     }
 
     /**

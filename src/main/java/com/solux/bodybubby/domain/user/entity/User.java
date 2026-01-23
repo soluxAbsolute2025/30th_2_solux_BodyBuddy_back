@@ -60,7 +60,8 @@ public class User extends BaseTimeEntity {
 
     // 설정 정보
     @Column(length = 100)
-    private String introduction;
+    @Builder.Default
+    private String introduction = "건강한 라이프 스타일 실천 중";
 
     @Column(name = "profile_image_url")
     private String profileImageUrl;
@@ -170,5 +171,13 @@ public class User extends BaseTimeEntity {
     @Column(name = "daily_diet_goal")
     private Integer dailyDietGoal;
 
+    //보상상점 관련 엔티티 코드들 
+    @Builder.Default
+    private Integer currentPoints = 0; // 필드 추가
+
+    public void minusPoints(int amount) {
+    if (this.currentPoints < amount) throw new IllegalStateException("포인트 부족");
+    this.currentPoints -= amount;
+}
     
 }
