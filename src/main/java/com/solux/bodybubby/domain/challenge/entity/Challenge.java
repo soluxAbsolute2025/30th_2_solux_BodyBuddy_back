@@ -93,7 +93,7 @@ public class Challenge {
     }
 
     // 그룹챌린지 업데이트
-    public void update(String title, String description, Integer period, Integer maxParticipants, String privacyScope) {
+    public void update(String title, String description, Integer period, Integer maxParticipants, Visibility visibility) {
         if (title != null) this.title = title;
         if (description != null) this.description = description;
         if (period != null) this.period = period;
