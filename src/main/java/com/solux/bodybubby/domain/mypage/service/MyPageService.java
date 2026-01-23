@@ -61,6 +61,8 @@ public class MyPageService {
         // 3. DTO 조립 및 반환
         return MyPageResponseDto.builder()
                 .userProfile(MyPageResponseDto.UserProfileDto.builder()
+                   .userId(user.getId()) 
+                        .email(user.getEmail())
                         .nickname(user.getNickname())
                         .profileImageUrl(user.getProfileImageUrl())
                         .introduction(user.getIntroduction())

@@ -1,4 +1,4 @@
-package com.solux.bodybubby.domain.healthlog.entity.controller;
+package com.solux.bodybubby.domain.healthlog.controller;
 
 import com.solux.bodybubby.domain.healthlog.entity.dto.request.MealLogRequest;
 import com.solux.bodybubby.domain.healthlog.entity.dto.response.MealLogResponse;
@@ -21,7 +21,7 @@ public class MealLogController {
 
     private final MealLogService mealLogService;
 
-    /** 1. 식단 기록 생성 */
+    // 1. 등록
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> addMealLog(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -32,7 +32,7 @@ public class MealLogController {
         return ResponseEntity.status(HttpStatus.CREATED).body("식단 기록 성공!");
     }
 
-    /** 2. 특정 날짜 식단 조회 */
+    // 2. 조회 (쿼리 파라미터 ?date=2024-01-24)
     @GetMapping
     public ResponseEntity<List<MealLogResponse>> getMealLogs(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -41,7 +41,7 @@ public class MealLogController {
         return ResponseEntity.ok(mealLogService.getMealLogsByDate(userDetails.getId(), date));
     }
 
-    /** 3. 식단 수정 (이미지 포함) */
+    // 3. 수정
     @PatchMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> updateMealLog(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -53,7 +53,7 @@ public class MealLogController {
         return ResponseEntity.ok("식단이 수정되었습니다.");
     }
 
-    /** 4. 식단 삭제 (새로 추가됨) */
+    // 4. 삭제
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteMealLog(
             @AuthenticationPrincipal CustomUserDetails userDetails,

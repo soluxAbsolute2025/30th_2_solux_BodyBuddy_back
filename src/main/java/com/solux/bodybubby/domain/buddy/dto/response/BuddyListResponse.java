@@ -10,6 +10,7 @@ public record BuddyListResponse(
             Long userId,
             String nickname,
             Integer level,
+            String profileImageUrl,
             String lastActiveTime,
             boolean isPokedToday
     ) {}
@@ -18,6 +19,7 @@ public record BuddyListResponse(
             Long requestId,        // 요청 승인/거절 시 필요한 ID
             Long userId,           // 요청한 사람의 유저 ID
             String nickname,
+            String profileImageUrl,
             Integer level,
             String lastActiveTime
     ) {}

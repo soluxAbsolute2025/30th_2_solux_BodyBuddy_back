@@ -19,4 +19,8 @@ public interface PokeRepository extends JpaRepository<Poke, Long> {
     List<Poke> findRecentPokes(@Param("userId") Long userId, @Param("since") LocalDateTime since);
 
     void deleteByPokedAtBefore(LocalDateTime dateTime);
+
+    // 오늘 내가(pokerId) 찌른 사람들의(poked.id) 목록만 가져오기
+    @Query("SELECT p.poked.id FROM Poke p WHERE p.poker.id = :pokerId AND p.pokedAt >= :since")
+    List<Long> findPokedTargetIds(@Param("pokerId") Long pokerId, @Param("since") LocalDateTime since);
 }

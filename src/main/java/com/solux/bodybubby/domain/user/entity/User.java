@@ -18,7 +18,7 @@ public class User extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 계정 정보 (ID/PW 방식)
+    // 계정 정보
     @Column(name = "login_id", length = 20, unique = true, nullable = false)
     private String loginId;
 
@@ -52,11 +52,17 @@ public class User extends BaseTimeEntity {
     @Column(name = "daily_sleep_minutes_goal")
     private Integer dailySleepMinutesGoal; // 수면 목표 (분)
 
+    @Column(name = "daily_water_goal")
+    private Integer dailyWaterGoal;
+
+    @Column(name = "daily_diet_goal")
+    private Integer dailyDietGoal;
+
     @Column(columnDefinition = "TEXT")
-    private String interests; // 관심사 키워드를 문자열로 변환해 저장
+    private String interests; // 관심사 키워드
 
     @Column(name = "referrer_id", length = 50)
-    private String referrerId; //추천인 아이디
+    private String referrerId; // 추천인
 
     // 설정 정보
     @Column(length = 100)
@@ -66,14 +72,14 @@ public class User extends BaseTimeEntity {
     @Column(name = "profile_image_url")
     private String profileImageUrl;
 
-    // 마이페이지 활동 요약 데이터 추가
+    // 마이페이지 활동 요약
     @Column(name = "consecutive_attendance")
     @Builder.Default
-    private Integer consecutiveAttendance = 0; // 연속 출석 일수
+    private Integer consecutiveAttendance = 0;
 
     @Column(name = "completed_challenges_count")
     @Builder.Default
-    private Integer completedChallengesCount = 0; // 완료한 챌린지 수
+    private Integer completedChallengesCount = 0;
 
     // 레벨 및 포인트 시스템
     @Builder.Default
@@ -82,6 +88,9 @@ public class User extends BaseTimeEntity {
     @Column(name = "current_exp")
     @Builder.Default
     private Integer currentExp = 0;
+
+    @Builder.Default
+    private Integer currentPoints = 0; // 포인트
 
     // 공개 범위
     @Builder.Default
@@ -95,7 +104,7 @@ public class User extends BaseTimeEntity {
 
     @Column(name = "is_onboarded")
     @Builder.Default
-    private boolean isOnboarded = false; //온보딩 완료 여부 플래그
+    private boolean isOnboarded = false;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -105,9 +114,9 @@ public class User extends BaseTimeEntity {
         this.createdAt = LocalDateTime.now();
     }
 
-    /**
-     * [온보딩 완료 비즈니스 로직]
-     */
+    // === 비즈니스 로직 ===
+
+    // 1. 온보딩 완료
     public void completeOnboarding(String nickname, Integer age, String gender, Double height, Double weight,
                                    Integer dailyStepGoal, Integer dailyWorkoutGoal,
                                    Integer dailySleepHoursGoal, Integer dailySleepMinutesGoal,
@@ -126,9 +135,7 @@ public class User extends BaseTimeEntity {
         this.isOnboarded = true;
     }
 
-    /**
-     * [프로필 수정 비즈니스 로직]
-     */
+    // 2. 프로필 전체 수정 (텍스트 정보)
     public void updateProfile(String nickname, String introduction, String profileImageUrl, String email) {
         this.nickname = nickname;
         this.introduction = introduction;
@@ -136,27 +143,31 @@ public class User extends BaseTimeEntity {
         this.email = email;
     }
 
-    /**
-     * [비밀번호 변경 비즈니스 로직]
-     */
+    // [중요] S3 이미지 업로드 서비스에서 사용하기 위해 추가된 메서드
+    public void updateProfileUrl(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
+    }
+
+    // 3. 비밀번호 변경
     public void updatePassword(String encodedPassword) {
         this.password = encodedPassword;
     }
 
-    /**
-     * [경험치 획득 및 연속 출석 업데이트 비즈니스 로직]
-     */
+    // 4. 경험치 & 포인트 관련
     public void addExp(Integer exp) {
         this.currentExp += exp;
+    }
+
+    public void minusPoints(int amount) {
+        if (this.currentPoints < amount) throw new IllegalStateException("포인트 부족");
+        this.currentPoints -= amount;
     }
 
     public void updateAttendance(Integer days) {
         this.consecutiveAttendance = days;
     }
 
-    /**
-     * [공개 범위 설정 업데이트 비즈니스 로직]
-     */
+    // 5. 공개 범위 설정
     public void updatePrivacySettings(boolean water, boolean workout, boolean diet, boolean sleep) {
         this.isWaterPublic = water;
         this.isWorkoutPublic = workout;
@@ -171,22 +182,6 @@ public class User extends BaseTimeEntity {
         if (points != null && points > 0) {
             this.currentPoints += points;
         }
-    }
-
-    @Column(name = "daily_water_goal")
-    private Integer dailyWaterGoal;
-
-    // 2. 하루 식단 목표량
-    @Column(name = "daily_diet_goal")
-    private Integer dailyDietGoal;
-
-    //보상상점 관련 엔티티 코드들 
-    @Builder.Default
-    private Integer currentPoints = 0; // 필드 추가
-
-    public void minusPoints(int amount) {
-        if (this.currentPoints < amount) throw new IllegalStateException("포인트 부족");
-        this.currentPoints -= amount;
     }
 
 }

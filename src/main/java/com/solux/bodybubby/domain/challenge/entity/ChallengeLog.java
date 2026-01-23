@@ -29,6 +29,10 @@ public class ChallengeLog {
     private LocalDate logDate;
     private BigDecimal valueAchieved;
 
+    // ▼▼▼ [추가된 부분] 인증샷 이미지 URL 저장 필드 ▼▼▼
+    @Column(name = "image_url")
+    private String imageUrl; 
+
     private LocalDateTime createdAt;
 
     /**

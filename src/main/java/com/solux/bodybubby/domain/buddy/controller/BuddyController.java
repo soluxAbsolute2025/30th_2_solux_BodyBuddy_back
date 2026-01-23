@@ -32,12 +32,11 @@ public class BuddyController {
         return ResponseEntity.ok(buddyService.getBuddyDetail(userDetails.getId(), targetId));
     }
 
-    // 버디 아이디로 검색
-    @GetMapping("/search/{targetId}")
+    @GetMapping("/search")
     public ResponseEntity<BuddyDetailResponse> searchBuddy(
-            @PathVariable String loginId,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
-        return ResponseEntity.ok(buddyService.searchByLoginId(userDetails.getId(), loginId));
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam("nickname") String nickname) {
+        return ResponseEntity.ok(buddyService.searchByNickname(userDetails.getId(), nickname));
     }
 
     // 버디 추가 요청 보내기
