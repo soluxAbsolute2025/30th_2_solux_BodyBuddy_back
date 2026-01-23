@@ -40,7 +40,7 @@ public class GroupChallengeService {
         return userChallenges.stream().map(uc -> {
             Challenge challenge = uc.getChallenge();
             List<GroupListResponse.ParticipantProfile> topProfiles =
-                    userChallengeRepository.findAllByChallengeIdOrderByAchievementRateDesc(challenge.getId())
+                    userChallengeRepository.findAllByChallengeIdOrderByAchievementRateDescJoinedAtAsc(challenge.getId())
                             .stream().limit(3)
                             .map(p -> GroupListResponse.ParticipantProfile.builder()
                                     .profileImageUrl(p.getUser().getProfileImageUrl()).build())
@@ -65,7 +65,7 @@ public class GroupChallengeService {
                 .orElseThrow(() -> new IllegalArgumentException("참여 중인 챌린지가 아닙니다."));
 
         Challenge challenge = myUc.getChallenge();
-        List<UserChallenge> rankings = userChallengeRepository.findAllByChallengeIdOrderByAchievementRateDesc(challengeId);
+        List<UserChallenge> rankings = userChallengeRepository.findAllByChallengeIdOrderByAchievementRateDescJoinedAtAsc(challenge.getId());
 
         // [보완] 평균 달성률이 null일 경우(참여자가 없을 때 등) 0.0으로 처리하여 에러 방지
         Double avgRate = userChallengeRepository.getGroupAverageRate(challengeId);
