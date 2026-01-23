@@ -174,4 +174,14 @@ public class User extends BaseTimeEntity {
         this.isDietPublic = diet;
         this.isSleepPublic = sleep;
     }
+
+    /**
+     * 포인트 획득 로직 추가
+     */
+    public void addPoints(Integer points) {
+        if (points != null && points > 0) {
+            this.currentPoints += points;
+        }
+    }
+
 }

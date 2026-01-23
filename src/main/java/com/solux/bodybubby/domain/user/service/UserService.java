@@ -10,11 +10,13 @@ import com.solux.bodybubby.domain.user.repository.UserRepository;
 import com.solux.bodybubby.global.exception.BusinessException;
 import com.solux.bodybubby.global.exception.ErrorCode;
 import com.solux.bodybubby.global.security.JwtTokenProvider;
+import com.solux.bodybubby.global.util.S3Provider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
@@ -28,6 +30,7 @@ public class UserService {
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenRepository refreshTokenRepository;
     private final RedisTemplate<String, String> redisTemplate;
+    private final S3Provider s3Provider;
 
     // 회원가입
     @Transactional
@@ -138,16 +141,37 @@ public class UserService {
         );
     }
 
-    // 프로필 정보 수정 (텍스트)
+    // UserService.java
+
     @Transactional
-    public void updateProfile(Long userId, UserRequestDto.ProfileUpdate dto) {
+    public void updateProfile(Long userId, UserRequestDto.ProfileUpdate dto, MultipartFile image) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        if (dto.getEmail() != null && !user.getEmail().equals(dto.getEmail()) && userRepository.existsByEmail(dto.getEmail())) {
-            throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
+        // 1. 이미지 처리: 새로 들어온 파일이 있으면 S3 업로드, 없으면 기존 이미지 유지
+        String finalProfileUrl = user.getProfileImageUrl();
+        if (image != null && !image.isEmpty()) {
+            finalProfileUrl = s3Provider.uploadFile(image, "profile-images");
         }
-        user.updateProfile(dto.getNickname(), dto.getIntroduction(), dto.getProfileImageUrl(), dto.getEmail());
+        // 만약 파일은 없는데 DTO에 기존 URL이 담겨왔다면 (필요시 추가)
+        else if (dto.getProfileImageUrl() != null && !dto.getProfileImageUrl().isEmpty()) {
+            finalProfileUrl = dto.getProfileImageUrl();
+        }
+
+        // 2. 이메일 중복 체크 (이메일 변경시에만)
+        if (dto.getEmail() != null && !user.getEmail().equals(dto.getEmail())) {
+            if (userRepository.existsByEmail(dto.getEmail())) {
+                throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
+            }
+        }
+
+        // 3. 엔티티 업데이트 (DTO에 값이 있을 때만 반영하도록 null 체크 포함)
+        user.updateProfile(
+                dto.getNickname() != null ? dto.getNickname() : user.getNickname(),
+                dto.getIntroduction() != null ? dto.getIntroduction() : user.getIntroduction(),
+                finalProfileUrl,
+                dto.getEmail() != null ? dto.getEmail() : user.getEmail()
+        );
     }
 
     // 비밀번호 변경

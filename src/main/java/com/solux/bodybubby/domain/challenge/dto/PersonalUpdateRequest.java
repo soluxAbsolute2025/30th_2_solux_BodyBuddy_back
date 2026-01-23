@@ -1,5 +1,6 @@
 package com.solux.bodybubby.domain.challenge.dto;
 
+import com.solux.bodybubby.domain.challenge.entity.Visibility;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -17,5 +18,6 @@ public class PersonalUpdateRequest {
     private BigDecimal dailyGoal;
     private String unit;
     private String category;
+    private Visibility visibility;
     private boolean isImageDeleted; // 이미지 삭제 여부
 }
