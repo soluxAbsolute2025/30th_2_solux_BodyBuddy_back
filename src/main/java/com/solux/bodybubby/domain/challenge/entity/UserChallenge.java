@@ -45,6 +45,30 @@ public class UserChallenge {
     private LocalDateTime completedAt;
 
     /**
+     * [수정] 개인/그룹 공통 인증 업데이트 로직
+     * 1회 인증 시 currentProgress를 1 증가시키고, challenge.period를 기준으로 달성률 계산
+     */
+    public void updateCheckInProgress() {
+        // 1. 진행량(인증 횟수/일수) 1 증가
+        this.currentProgress = this.currentProgress.add(BigDecimal.ONE);
+
+        // 2. 달성률 = (현재 진행량 / 전체 목표(period)) * 100
+        Integer totalGoal = this.challenge.getPeriod();
+        if (totalGoal != null && totalGoal > 0) {
+            this.achievementRate = this.currentProgress
+                    .divide(new BigDecimal(totalGoal), 4, RoundingMode.HALF_UP)
+                    .multiply(new BigDecimal("100"))
+                    .setScale(0, RoundingMode.DOWN); // 소수점 버림 (정수 표기)
+        }
+
+        // 3. 100% 도달 시 완료 처리
+        if (this.achievementRate.compareTo(new BigDecimal("100")) >= 0) {
+            this.status = "COMPLETED";
+            this.completedAt = LocalDateTime.now();
+        }
+    }
+
+    /**
      * 개인챌린지 달성률 업데이트 로직
      * 달성률 = (현재량 / 목표량) * 100
      */
