@@ -52,11 +52,17 @@ public class User extends BaseTimeEntity {
     @Column(name = "daily_sleep_minutes_goal")
     private Integer dailySleepMinutesGoal; // 수면 목표 (분)
 
+    @Column(name = "daily_water_goal")
+    private Integer dailyWaterGoal;
+
+    @Column(name = "daily_diet_goal")
+    private Integer dailyDietGoal;
+
     @Column(columnDefinition = "TEXT")
-    private String interests; // 관심사 키워드를 문자열로 변환해 저장
+    private String interests; // 관심사 키워드
 
     @Column(name = "referrer_id", length = 50)
-    private String referrerId; //추천인 아이디
+    private String referrerId; // 추천인
 
     // 설정 정보
     @Column(length = 100)
@@ -66,14 +72,14 @@ public class User extends BaseTimeEntity {
     @Column(name = "profile_image_url")
     private String profileImageUrl;
 
-    // 마이페이지 활동 요약 데이터 추가
+    // 마이페이지 활동 요약
     @Column(name = "consecutive_attendance")
     @Builder.Default
-    private Integer consecutiveAttendance = 0; // 연속 출석 일수
+    private Integer consecutiveAttendance = 0;
 
     @Column(name = "completed_challenges_count")
     @Builder.Default
-    private Integer completedChallengesCount = 0; // 완료한 챌린지 수
+    private Integer completedChallengesCount = 0;
 
     // 레벨 및 포인트 시스템
     @Builder.Default
@@ -150,6 +156,11 @@ public class User extends BaseTimeEntity {
         this.currentExp += exp;
     }
 
+    public void minusPoints(int amount) {
+        if (this.currentPoints < amount) throw new IllegalStateException("포인트 부족");
+        this.currentPoints -= amount;
+    }
+
     public void updateAttendance(Integer days) {
         this.consecutiveAttendance = days;
     }
@@ -180,7 +191,7 @@ public class User extends BaseTimeEntity {
     @Column(name = "daily_diet_goal")
     private Integer dailyDietGoal;
 
-    //보상상점 관련 엔티티 코드들 
+    //보상상점 관련 엔티티 코드들
     @Builder.Default
     private Integer currentPoints = 0; // 필드 추가
 

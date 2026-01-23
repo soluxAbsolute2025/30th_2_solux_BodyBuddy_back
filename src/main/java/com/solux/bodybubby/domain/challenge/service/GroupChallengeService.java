@@ -26,6 +26,7 @@ import java.util.stream.IntStream;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class GroupChallengeService {
+
     private final UserRepository userRepository;
     private final ChallengeRepository challengeRepository;
     private final UserChallengeRepository userChallengeRepository;

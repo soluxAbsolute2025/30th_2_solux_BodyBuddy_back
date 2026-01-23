@@ -29,6 +29,7 @@ public class MyPageResponseDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class UserProfileDto {
+        private Long userId;
         private String nickname;         // 닉네임 (ex: 김바디)
         private String profileImageUrl;  // 프로필 이미지 URL
         private String introduction;     // 한 줄 소개 (ex: 건강한 라이프 스타일 실천 중)
