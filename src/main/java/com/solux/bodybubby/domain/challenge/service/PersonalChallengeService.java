@@ -1,10 +1,7 @@
 package com.solux.bodybubby.domain.challenge.service;
 
 import com.solux.bodybubby.domain.challenge.dto.*;
-import com.solux.bodybubby.domain.challenge.entity.Challenge;
-import com.solux.bodybubby.domain.challenge.entity.ChallengeStatus;
-import com.solux.bodybubby.domain.challenge.entity.UserChallenge;
-import com.solux.bodybubby.domain.challenge.entity.Visibility;
+import com.solux.bodybubby.domain.challenge.entity.*;
 import com.solux.bodybubby.domain.challenge.repository.ChallengeLogRepository;
 import com.solux.bodybubby.domain.challenge.repository.ChallengeRepository;
 import com.solux.bodybubby.domain.challenge.repository.UserChallengeRepository;
@@ -31,8 +28,12 @@ public class PersonalChallengeService {
 
     private final ChallengeRepository challengeRepository;
     private final UserChallengeRepository userChallengeRepository;
+    private final ChallengeLogRepository challengeLogRepository;
     private final UserRepository userRepository;
     private final S3Service s3Service;
+
+    // 인증 시 매번 지급할 고정 포인트 (예: 10 XP)
+    private static final int DAILY_CHECK_IN_REWARD = 10;
 
     /**
      * 개인 챌린지 목록 조회
@@ -60,30 +61,19 @@ public class PersonalChallengeService {
                             .imageUrl(c.getImageUrl())
                             .category(c.getChallengeType())
                             .progressValue(uc.getCurrentProgress().intValue())
-                            .totalValue(c.getTargetValue().intValue())
+                            .totalValue(c.getPeriod())
                             .expectedReward(c.getBaseRewardPoints() != null ? c.getBaseRewardPoints() : 0) // 엔티티 값 사용
                             .dday((int) dday)
                             .colorCode(getColorByCategory(c.getChallengeType())) // 카테고리별 색상 로직 적용
                             .build();
                 }).collect(Collectors.toList());
-
-        // 3. 요약 데이터 계산 (완료된 챌린지 포인트 합산 + 진행 중인 평균 달성률)
-        int totalAcquiredPoints = allMyPersonal.stream()
-                .filter(uc -> "COMPLETED".equals(uc.getStatus()))
-                .mapToInt(uc -> uc.getChallenge().getBaseRewardPoints() != null ? uc.getChallenge().getBaseRewardPoints() : 0)
-                .sum();
-
-        int avgAchievementRate = ongoing.isEmpty() ? 0 : (int) ongoing.stream()
-                .mapToDouble(uc -> uc.getAchievementRate().doubleValue())
-                .average().orElse(0.0);
+        User user = userRepository.findById(userId).orElseThrow();
 
         return PersonalListResponse.builder()
                 .summary(PersonalListResponse.Summary.builder()
-                        .acquiredPoints(totalAcquiredPoints)
-                        .myAchievementRate(avgAchievementRate)
-                        .build())
-                .ongoingChallenges(ongoingList)
-                .build();
+                        .acquiredPoints(user.getCurrentPoints()) // 유저의 실제 포인트 노출
+                        .myAchievementRate(ongoing.isEmpty() ? 0 : (int) ongoing.stream().mapToDouble(uc -> uc.getAchievementRate().doubleValue()).average().orElse(0.0)).build())
+                .ongoingChallenges(ongoingList).build();
     }
 
     /**
@@ -104,11 +94,11 @@ public class PersonalChallengeService {
                 .description(c.getDescription())
                 .imageUrl(c.getImageUrl())
                 .category(c.getChallengeType())
-                .targetDays((int) totalTargetDays)
+                .targetDays(c.getPeriod())
                 .dailyGoal(c.getTargetValue().intValue())
                 .unit(c.getTargetUnit())
                 .expectedReward(c.getBaseRewardPoints())
-                .rewardRate(c.getBaseRewardPoints() != null && totalTargetDays > 0 ? c.getBaseRewardPoints() / (int)totalTargetDays : 0) // 일일 기여 포인트(예시)
+                .rewardRate(c.getBaseRewardPoints() != null && totalTargetDays > 0 ? c.getBaseRewardPoints() / (int) totalTargetDays : 0) // 일일 기여 포인트(예시)
                 .myAchievementRate(uc.getAchievementRate().intValue())
                 .build();
     }
@@ -131,6 +121,7 @@ public class PersonalChallengeService {
                 .challengeType(request.getCategory())
                 .targetValue(request.getDailyGoal())
                 .targetUnit(request.getUnit())
+                .period(request.getTargetDays())
                 .baseRewardPoints(request.getExpectedReward())
                 .startDate(LocalDate.now())
                 .endDate(LocalDate.now().plusDays(request.getTargetDays()))
@@ -214,6 +205,38 @@ public class PersonalChallengeService {
                         .estimatedReward(c.getBaseRewardPoints())
                         .build())
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * 개인 챌린지 인증 (Check-in)
+     */
+    @Transactional
+    public void checkIn(Long challengeId, Long userId) {
+        UserChallenge uc = userChallengeRepository.findByUserIdAndChallengeId(userId, challengeId)
+                .orElseThrow(() -> new IllegalArgumentException("참여 정보를 찾을 수 없습니다."));
+
+        // 1. 하루 1회 중복 인증 방지
+        if (challengeLogRepository.existsByUserChallengeAndLogDate(uc, LocalDate.now())) {
+            throw new IllegalStateException("오늘은 이미 인증을 완료했습니다.");
+        }
+
+        User user = uc.getUser();
+        Challenge challenge = uc.getChallenge();
+
+        // 2. [매일 보상] 인증할 때마다 고정 포인트(10 XP) 즉시 지급
+        user.addPoints(DAILY_CHECK_IN_REWARD);
+
+        // 3. 인증 로그 기록
+        challengeLogRepository.save(ChallengeLog.builder()
+                .userChallenge(uc).logDate(LocalDate.now()).valueAchieved(BigDecimal.ONE).build());
+
+        // 4. 진행률 및 상태 업데이트
+        uc.updateCheckInProgress();
+
+        // 5. [최종 보상] 챌린지가 방금 막 완료(COMPLETED)되었다면 전체 보상 지급
+        if ("COMPLETED".equals(uc.getStatus())) {
+            user.addPoints(challenge.getBaseRewardPoints());
+        }
     }
 
     /**

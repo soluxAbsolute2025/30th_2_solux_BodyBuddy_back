@@ -17,6 +17,6 @@ public class GroupCreateRequest {
     private Integer period;        // 기간(일 단위): 30
     @Schema(description = "최대 참여 인원", example = "8")
     private Integer maxParticipants; // 최대 인원: 8
-    @Schema(description = "공개 범위 (PUBLIC, FRIENDS, PRIVATE)", example = "FRIENDS")
-    private String privacyScope;   // 공개 범위: "FRIENDS"
+    @Schema(description = "공개 범위 (PUBLIC, SECRET)", example = "SECRET")
+    private String visibility;   // 공개 범위: "SECRET"
 }

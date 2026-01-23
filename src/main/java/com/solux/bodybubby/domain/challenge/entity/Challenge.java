@@ -107,7 +107,10 @@ public class Challenge {
     public void updatePersonal(String title, String description, Integer targetDays, BigDecimal dailyGoal, String unit, Visibility visibility) {
         if (title != null) this.title = title;
         if (description != null) this.description = description;
-        if (targetDays != null) this.endDate = LocalDate.now().plusDays(targetDays); // 기간 수정 시 종료일 재계산
+        if (targetDays != null) {
+            this.period = targetDays; // 목표 일수/횟수를 period에 저장
+            this.endDate = LocalDate.now().plusDays(targetDays);
+        }
         if (dailyGoal != null) this.targetValue = dailyGoal;
         if (unit != null) this.targetUnit = unit;
         if (visibility != null) this.visibility = visibility;

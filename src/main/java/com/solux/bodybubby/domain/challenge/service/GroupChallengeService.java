@@ -97,7 +97,7 @@ public class GroupChallengeService {
                         .groupCode(challenge.getGroupCode())
                         .currentParticipantCount(rankings.size())
                         .maxParticipantCount(challenge.getMaxParticipants())
-                        .isPublic(!"PRIVATE".equals(challenge.getPrivacyScope()))
+                        .isPublic(!"SECRET".equals(challenge.getVisibility()))
                         .build())
                 .myStatus(GroupDetailResponse.MyStatus.builder()
                         .myAchievementRate(myUc.getAchievementRate())
@@ -146,7 +146,7 @@ public class GroupChallengeService {
                 .description(request.getDescription())
                 .imageUrl(uploadedImageUrl)
                 .period(request.getPeriod())
-                .privacyScope(request.getPrivacyScope())
+                .visibility(request.getVisibility())
                 .startDate(startDate)
                 .endDate(endDate)
                 .maxParticipants(request.getMaxParticipants())
@@ -219,7 +219,7 @@ public class GroupChallengeService {
         if (!challenge.getCreator().getId().equals(userId)) throw new IllegalStateException("권한이 없습니다.");
 
         // [보완] 실제 데이터 업데이트 로직 추가 (엔티티에 update 메서드 필요)
-        challenge.update(request.getTitle(), request.getDescription(), request.getPeriod(), request.getMaxParticipants(), request.getPrivacyScope());
+        challenge.update(request.getTitle(), request.getDescription(), request.getPeriod(), request.getMaxParticipants(), request.getVisibility());
     }
 
     /**

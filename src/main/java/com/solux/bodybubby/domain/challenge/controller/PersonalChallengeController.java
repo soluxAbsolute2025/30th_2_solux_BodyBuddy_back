@@ -83,6 +83,16 @@ public class PersonalChallengeController {
     }
 
     /**
+     * 개인 챌린지 인증 (Check-in)
+     * POST /api/challenges/personal/{id}/check-in
+     */
+    @PostMapping("/{id}/check-in")
+    public ResponseEntity<ChallengeResponseDto<Void>> checkIn(@PathVariable Long id, Long userId) {
+        personalChallengeService.checkIn(id, userId);
+        return ResponseEntity.ok(new ChallengeResponseDto<>(200, "인증 성공", null));
+    }
+
+    /**
      * 완료된 개인 챌린지 목록 조회
      * GET /api/challenges/personal/completed
      */

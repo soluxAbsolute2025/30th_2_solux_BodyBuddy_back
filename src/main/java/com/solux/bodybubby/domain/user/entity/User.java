@@ -164,6 +164,15 @@ public class User extends BaseTimeEntity {
         this.isSleepPublic = sleep;
     }
 
+    /**
+     * 포인트 획득 로직 추가
+     */
+    public void addPoints(Integer points) {
+        if (points != null && points > 0) {
+            this.currentPoints += points;
+        }
+    }
+
     @Column(name = "daily_water_goal")
     private Integer dailyWaterGoal;
 
@@ -176,8 +185,8 @@ public class User extends BaseTimeEntity {
     private Integer currentPoints = 0; // 필드 추가
 
     public void minusPoints(int amount) {
-    if (this.currentPoints < amount) throw new IllegalStateException("포인트 부족");
-    this.currentPoints -= amount;
-}
-    
+        if (this.currentPoints < amount) throw new IllegalStateException("포인트 부족");
+        this.currentPoints -= amount;
+    }
+
 }
