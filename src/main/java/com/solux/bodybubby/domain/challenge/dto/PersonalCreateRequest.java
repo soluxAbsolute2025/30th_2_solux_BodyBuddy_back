@@ -1,5 +1,6 @@
 package com.solux.bodybubby.domain.challenge.dto;
 
+import com.solux.bodybubby.domain.challenge.entity.Visibility;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -17,5 +18,6 @@ public class PersonalCreateRequest {
     private BigDecimal dailyGoal;  // 일일 목표 수치
     private String unit;           // "steps", "count", "ml", "minutes"
     private String category;       // "DAILY", "WEEKLY"
+    private Visibility visibility;
     private Integer expectedReward; // 예상 보상 포인트
 }

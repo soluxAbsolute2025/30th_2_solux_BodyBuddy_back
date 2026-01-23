@@ -30,7 +30,7 @@ public class GroupDetailResponse {
         private String groupCode;           // "DIET2025"
         private Integer currentParticipantCount; // 4명
         private Integer maxParticipantCount;     // 8명
-        private boolean isPublic;           // 친구 공개 여부
+        private boolean isPublic;
         private Integer expectedRewardPoints;
     }
 
