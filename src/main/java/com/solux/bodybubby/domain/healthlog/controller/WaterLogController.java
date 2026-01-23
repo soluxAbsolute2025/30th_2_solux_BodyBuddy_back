@@ -1,4 +1,4 @@
-package com.solux.bodybubby.domain.healthlog.entity.controller;
+package com.solux.bodybubby.domain.healthlog.controller;
 
 import com.solux.bodybubby.domain.healthlog.entity.dto.request.WaterLogRequestDTO;
 import com.solux.bodybubby.domain.healthlog.entity.dto.response.WaterLogResponseDTO;

@@ -62,6 +62,7 @@ public class MyPageService {
         return MyPageResponseDto.builder()
                 .userProfile(MyPageResponseDto.UserProfileDto.builder()
                    .userId(user.getId()) 
+                        .email(user.getEmail())
                         .nickname(user.getNickname())
                         .profileImageUrl(user.getProfileImageUrl())
                         .introduction(user.getIntroduction())

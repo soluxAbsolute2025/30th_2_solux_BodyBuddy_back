@@ -15,3 +15,6 @@ build/
 
 # 로컬 개발용
 .env.local
+
+#구글키
+secret.properties
