@@ -10,10 +10,12 @@ import java.math.BigDecimal;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class GroupCheckInResponse {
     private Long challengeId;
+    private String nickname;
     private String title;                 // "매일 10,000보 걷기"
     private Integer earnedPoints;         // "10 포인트를 획득하였습니다"
     private MyStatusUpdate myStatus;
     private BigDecimal groupAverageRate;  // 갱신된 그룹 평균
+    private String checkInTime;         // 인증 완료 시각
 
     @Getter
     @Builder

@@ -91,8 +91,12 @@ public class GroupChallengeController {
      * 그룹 챌린지 인증 (Check-in)
      */
     @PostMapping("/{id}/check-in")
-    public ResponseEntity<ChallengeResponseDto<GroupCheckInResponse>> checkIn(@PathVariable Long id, Long userId, @RequestBody GroupCheckInRequest request) {
-        GroupCheckInResponse response = challengeService.checkIn(id, userId, request.getCurrentValue());
+    public ResponseEntity<ChallengeResponseDto<GroupCheckInResponse>> checkIn(
+            @PathVariable Long id,
+            Long userId
+    ) {
+        // 서비스 메서드 호출 시 인자값(value) 제거
+        GroupCheckInResponse response = challengeService.checkIn(id, userId);
         return ResponseEntity.ok(new ChallengeResponseDto<>(200, "인증 성공", response));
     }
 }
