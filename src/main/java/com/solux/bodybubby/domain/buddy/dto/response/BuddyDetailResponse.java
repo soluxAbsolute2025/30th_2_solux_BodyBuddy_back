@@ -1,12 +1,19 @@
 package com.solux.bodybubby.domain.buddy.dto.response;
 
+import com.solux.bodybubby.domain.home.dto.response.HomeResponseDTO;
+
 public record BuddyDetailResponse(
+        // 1. 기본 프로필 정보
         Long userId,
-        String loginId,       // 아이디로 검색했을 때 확인용
+        String loginId,
         String nickname,
         Integer level,
         String profileImageUrl,
-        String introduction,   // 상세 정보 포함
-        Integer completedChallenges,
-        String status         // "FRIEND", "PENDING", "NONE"
+        String lastActivityTime,
+
+        // 2. 친구 관계 상태
+        String status,
+
+        // 3. 목표 달성 정보 (객체로 분리)
+        HomeResponseDTO homeData
 ) {}

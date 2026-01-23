@@ -28,4 +28,7 @@ public interface UserChallengeRepository extends JpaRepository<UserChallenge, Lo
 
     // 5. 특정 유저의 모든 참여 정보 조회 (개인 챌린지 필터링용)
     List<UserChallenge> findAllByUserId(Long userId);
+
+    // 챌린지 ID로 찾아서 달성률(AchievementRate) 내림차순으로 정렬해 가져오는 메서드
+    List<UserChallenge> findAllByChallengeIdOrderByAchievementRateDesc(Long challengeId);
 }
