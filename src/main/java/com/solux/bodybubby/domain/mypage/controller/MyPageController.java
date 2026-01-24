@@ -14,9 +14,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * 마이페이지 관련 API 컨트롤러
- */
 @RestController
 @RequestMapping("/api/mypage")
 @RequiredArgsConstructor
@@ -50,8 +47,15 @@ public class MyPageController {
      * [뱃지 컬렉션 전체 조회] GET /api/mypage/badges
      */
     @GetMapping("/badges")
-    public ResponseEntity<BadgeCollectionDto> getBadgeCollection(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        return ResponseEntity.ok(myPageService.getBadgeCollection(userDetails.getId()));
+    public ResponseEntity<Map<String, Object>> getBadgeCollection(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        BadgeCollectionDto data = myPageService.getBadgeCollection(userDetails.getId());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", 200);
+        response.put("message", "뱃지 컬렉션을 성공적으로 조회했습니다.");
+        response.put("data", data);
+
+        return ResponseEntity.ok(response);
     }
 
     /**
