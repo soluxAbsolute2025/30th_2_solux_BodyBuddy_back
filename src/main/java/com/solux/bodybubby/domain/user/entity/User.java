@@ -167,7 +167,9 @@ public class User extends BaseTimeEntity {
         this.consecutiveAttendance = days;
     }
 
-    // 5. 공개 범위 설정
+    /**
+     * [공개 범위 설정 업데이트 비즈니스 로직]
+     */
     public void updatePrivacySettings(boolean water, boolean workout, boolean diet, boolean sleep) {
         this.isWaterPublic = water;
         this.isWorkoutPublic = workout;
@@ -183,5 +185,4 @@ public class User extends BaseTimeEntity {
             this.currentPoints += points;
         }
     }
-
 }

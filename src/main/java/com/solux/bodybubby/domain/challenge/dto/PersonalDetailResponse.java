@@ -20,7 +20,7 @@ public class PersonalDetailResponse {
     private String unit;
 
     // 달성률 및 보상
-    private Integer expectedReward;
+    private Integer estimatedReward;
     private Integer rewardRate;
     private Integer myAchievementRate; // 달성률
 }
