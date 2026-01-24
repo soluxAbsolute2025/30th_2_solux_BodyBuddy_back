@@ -1,6 +1,7 @@
 package com.solux.bodybubby.domain.mypage.service;
 
 import com.solux.bodybubby.domain.badge.entity.Badge;
+import com.solux.bodybubby.domain.badge.entity.UserBadge;
 import com.solux.bodybubby.domain.badge.repository.BadgeRepository;
 import com.solux.bodybubby.domain.badge.repository.UserBadgeRepository;
 import com.solux.bodybubby.domain.mypage.dto.*;
@@ -137,25 +138,36 @@ public class MyPageService {
         // 1. 시스템의 모든 뱃지 조회
         List<Badge> allBadges = badgeRepository.findAll();
 
-        // 2. 해당 유저가 획득한 뱃지 ID 리스트 추출
-        List<Long> acquiredBadgeIds = userBadgeRepository.findAllByUser_Id(userId).stream()
-                .map(ub -> ub.getBadge().getId())
-                .collect(Collectors.toList());
+        // 2. 해당 유저가 획득한 뱃지 정보 조회 (획득 일시를 가져오기 위해 엔티티 리스트로 조회)
+        List<UserBadge> userBadges = userBadgeRepository.findAllByUser_Id(userId);
 
-        // 3. 전체 뱃지를 돌면서 획득 여부 마킹
+        // 획득한 뱃지 ID를 Key로, 획득 일시를 Value로 갖는 Map 생성
+        java.util.Map<Long, java.time.LocalDateTime> acquiredBadgeMap = userBadges.stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        ub -> ub.getBadge().getId(),
+                        ub -> ub.getAcquiredAt()
+                ));
+
+        // 3. 전체 뱃지를 돌면서 디자인 시안처럼 미획득 뱃지도 모두 포함하여 생성
         List<BadgeCollectionDto.BadgeItemDto> badgeItems = allBadges.stream()
-                .map(badge -> BadgeCollectionDto.BadgeItemDto.builder()
-                        .badgeId(badge.getId())
-                        .name(badge.getName())
-                        .description(badge.getDescription())
-                        .imageUrl(badge.getIconUrl())
-                        .isAcquired(acquiredBadgeIds.contains(badge.getId()))
-                        .build())
-                .collect(Collectors.toList());
+                .map(badge -> {
+                    boolean isAcquired = acquiredBadgeMap.containsKey(badge.getId());
+                    java.time.LocalDateTime acquiredAt = acquiredBadgeMap.get(badge.getId());
+
+                    return BadgeCollectionDto.BadgeItemDto.builder()
+                            .id(badge.getId())
+                            .name(badge.getName())
+                            .type("BADGE") // 명세서 예시 값 적용
+                            .iconUrl(badge.getIconUrl())
+                            .isAcquired(isAcquired)
+                            .acquiredAt(isAcquired && acquiredAt != null ? acquiredAt.toString() : null)
+                            .build();
+                })
+                .collect(java.util.stream.Collectors.toList());
 
         return BadgeCollectionDto.builder()
                 .totalBadgeCount(allBadges.size())
-                .acquiredBadgeCount(acquiredBadgeIds.size())
+                .acquiredBadgeCount(userBadges.size())
                 .badges(badgeItems)
                 .build();
     }
