@@ -6,6 +6,7 @@ import com.solux.bodybubby.domain.buddy.dto.response.BuddyListResponse;
 import com.solux.bodybubby.domain.buddy.entity.Buddy;
 import com.solux.bodybubby.domain.buddy.entity.BuddyStatus;
 import com.solux.bodybubby.domain.buddy.repository.BuddyRepository;
+import com.solux.bodybubby.domain.buddy.repository.PokeRepository;
 import com.solux.bodybubby.domain.home.dto.response.HomeResponseDTO;
 import com.solux.bodybubby.domain.home.service.HomeService;
 import com.solux.bodybubby.domain.user.entity.User;
@@ -16,6 +17,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,6 +30,7 @@ public class BuddyService {
     private final BuddyRepository buddyRepository;
     private final UserRepository userRepository;
     private final HomeService homeService;
+    private final PokeRepository pokeRepository;
 
     public BuddyListResponse getBuddyList(Long userId) {
         List<BuddyListResponse.BuddyInfo> myBuddies = fetchMyBuddies(userId);
@@ -37,15 +41,24 @@ public class BuddyService {
 
     // 수락된 친구 목록 조회 및 변환
     private List<BuddyListResponse.BuddyInfo> fetchMyBuddies(Long userId) {
+        // 1. 오늘 날짜의 시작 시간 (00:00:00) 구하기
+        LocalDateTime startOfToday = LocalDate.now().atStartOfDay();
+
+        // 2. 오늘 내가 찌른 사람들의 ID 목록 한 번에 가져오기 (N+1 방지)
+        List<Long> pokedIds = pokeRepository.findPokedTargetIds(userId, startOfToday);
+
         return buddyRepository.findAllAcceptedBuddies(userId).stream()
                 .map(buddy -> {
                     var friend = buddy.getSender().getId().equals(userId) ? buddy.getReceiver() : buddy.getSender();
+                    boolean hasPokedToday = pokedIds.contains(friend.getId());
+
                     return new BuddyListResponse.BuddyInfo(
                             friend.getId(),
                             friend.getNickname(),
                             friend.getLevel(),
+                            friend.getProfileImageUrl(),
                             "10분 전",
-                            false // 추후 수정 예정
+                            hasPokedToday // 추후 수정 예정
                     );
                 }).collect(Collectors.toList());
     }
@@ -57,6 +70,7 @@ public class BuddyService {
                         buddy.getId(),
                         buddy.getSender().getId(),
                         buddy.getSender().getNickname(),
+                        buddy.getSender().getProfileImageUrl(),
                         buddy.getSender().getLevel(),
                         "방금 전" // 추후 수정 예정
                 )).collect(Collectors.toList());
@@ -65,6 +79,13 @@ public class BuddyService {
     // 버디 아이디(loginId)로 검색
     public BuddyDetailResponse searchByLoginId(Long myId, String targetLoginId) {
         User targetUser = userRepository.findByLoginId(targetLoginId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        return getBuddyDetailResponse(myId, targetUser);
+    }
+
+    public BuddyDetailResponse searchByNickname(Long myId, String nickname) {
+        User targetUser = userRepository.findByNickname(nickname)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         return getBuddyDetailResponse(myId, targetUser);

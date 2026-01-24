@@ -7,6 +7,8 @@ import com.solux.bodybubby.domain.challenge.repository.ChallengeRepository;
 import com.solux.bodybubby.domain.challenge.repository.UserChallengeRepository;
 import com.solux.bodybubby.domain.user.entity.User;
 import com.solux.bodybubby.domain.user.repository.UserRepository;
+import com.solux.bodybubby.global.util.S3Provider;
+
 import com.solux.bodybubby.s3Test.S3Service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,12 +28,12 @@ import java.util.stream.IntStream;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class GroupChallengeService {
-
     private final UserRepository userRepository;
     private final ChallengeRepository challengeRepository;
     private final UserChallengeRepository userChallengeRepository;
     private final ChallengeLogRepository challengeLogRepository;
-    private final S3Service s3Service;
+    private final S3Provider s3Provider;
+//    private final S3Service s3Service;
     private static final int DAILY_CHECK_IN_REWARD = 10;
 
     /**
@@ -54,7 +56,7 @@ public class GroupChallengeService {
             return GroupListResponse.builder()
                     .challengeId(challenge.getId())
                     .title(challenge.getTitle())
-                    .imageUrl(challenge.getImageUrl()) // 목록 조회 시 이미지 URL 포함
+                    .imageUrl(challenge.getImageUrl())
                     .myRank(uc.getCurrentRank())
                     .participantCount((int) userChallengeRepository.countByChallengeId(challenge.getId()))
                     .remainingDays((int) remainingDays)
@@ -91,7 +93,7 @@ public class GroupChallengeService {
                         .challengeId(challenge.getId())
                         .title(challenge.getTitle())
                         .description(challenge.getDescription())
-                        .imageUrl(challenge.getImageUrl()) // 목록 조회 시 이미지 URL 포함
+                        .imageUrl(challenge.getImageUrl())
                         .startDate(challenge.getStartDate().toString())
                         .endDate(challenge.getEndDate().toString())
                         .groupCode(challenge.getGroupCode())
@@ -124,7 +126,7 @@ public class GroupChallengeService {
     }
 
     /**
-     * 그룹 챌린지 생성
+     * 그룹 챌린지 생성 (S3 업로드 적용)
      */
     @Transactional
     public GroupCreateResponse createGroupChallenge(GroupCreateRequest request, Long userId, MultipartFile image) {
@@ -136,7 +138,11 @@ public class GroupChallengeService {
             throw new IllegalArgumentException("챌린지 기간은 최소 7일 이상으로 설정해야 합니다.");
         }
 
-        String uploadedImageUrl = s3Service.uploadFile(image);
+        // [수정] 이미지가 있을 때만 업로드 (Null Safety)
+        String uploadedImageUrl = null;
+        if (image != null && !image.isEmpty()) {
+            uploadedImageUrl = s3Provider.uploadFile(image, "challenge-cover");
+        }
 
         LocalDate startDate = LocalDate.now();
         LocalDate endDate = startDate.plusDays(request.getPeriod());
@@ -145,7 +151,7 @@ public class GroupChallengeService {
                 .creator(creator)
                 .title(request.getTitle())
                 .description(request.getDescription())
-                .imageUrl(uploadedImageUrl)
+                .imageUrl(uploadedImageUrl) // S3 URL 저장
                 .period(request.getPeriod())
                 .visibility(request.getVisibility() != null ? request.getVisibility() : Visibility.PUBLIC)
                 .startDate(startDate)
@@ -193,8 +199,6 @@ public class GroupChallengeService {
                 .user(user).challenge(challenge).currentProgress(BigDecimal.ZERO)
                 .achievementRate(BigDecimal.ZERO).status("IN_PROGRESS")
                 .joinedAt(LocalDateTime.now()).build());
-
-        // 새 참가자가 들어왔으므로 순위 재산정
         updateRanks(challenge.getId());
     }
 
@@ -234,46 +238,61 @@ public class GroupChallengeService {
     }
 
     /**
-     * 그룹 챌린지 인증 (Check-in)
+     * 그룹 챌린지 인증 (S3 업로드 및 로그 저장)
      */
     @Transactional
-    public GroupCheckInResponse checkIn(Long challengeId, Long userId) {
+    public GroupCheckInResponse checkIn(Long challengeId, Long userId, MultipartFile file) {
         UserChallenge uc = userChallengeRepository.findByUserIdAndChallengeId(userId, challengeId)
                 .orElseThrow(() -> new IllegalArgumentException("참여 정보를 찾을 수 없습니다."));
 
-        // 하루 1회 중복 인증 방지
+        // 1. 중복 인증 체크
         if (challengeLogRepository.existsByUserChallengeAndLogDate(uc, LocalDate.now())) {
             throw new IllegalStateException("오늘은 이미 인증을 완료했습니다.");
         }
 
-        // 유저 포인트 실시간 지급 (인증할 때마다 10p)
+        // 2. 이미지 S3 업로드 (변수 선언 추가)
+        String uploadedImageUrl = null;
+        if (file != null && !file.isEmpty()) {
+            uploadedImageUrl = s3Provider.uploadFile(file, "challenge-auth");
+        }
+
+        // 3. 유저 포인트 지급
         User user = uc.getUser();
         user.addPoints(DAILY_CHECK_IN_REWARD);
 
-        // 인증 로그 기록 (수치 대신 고정값 1 저장 가능)
+        // 4. 인증 로그 기록 (imageUrl에 업로드된 경로 저장)
         challengeLogRepository.save(ChallengeLog.builder()
-                .userChallenge(uc).logDate(LocalDate.now()).valueAchieved(BigDecimal.ONE).build());
+                .userChallenge(uc)
+                .logDate(LocalDate.now())
+                .valueAchieved(BigDecimal.ONE)
+                .imageUrl(uploadedImageUrl) // 👈 여기서 변수 사용
+                .build());
 
-        // 3. 일수 기반 달성률 업데이트 호출
+        // 5. 진행률 업데이트 (UserChallenge 엔티티 내부 로직 실행)
         uc.updateGroupProgress();
 
-        // 100% 달성 시 전체 보상 보너스 지급
+        // 6. 100% 달성 보너스 (Null 방어 추가)
         if ("COMPLETED".equals(uc.getStatus())) {
-            user.addPoints(uc.getChallenge().getBaseRewardPoints());
+            Integer bonus = uc.getChallenge().getBaseRewardPoints();
+            user.addPoints(bonus != null ? bonus : 500);
         }
 
-        // 실시간 순위 업데이트 (중요!)
+        // 7. 실시간 순위 업데이트
         updateRanks(challengeId);
+
+        // 8. 평균 달성률 조회 및 응답 (Null 방어)
+        Double avgRate = userChallengeRepository.getGroupAverageRate(challengeId);
+        BigDecimal finalAvgRate = BigDecimal.valueOf(avgRate != null ? avgRate : 0.0);
 
         return GroupCheckInResponse.builder()
                 .challengeId(challengeId)
                 .title(uc.getChallenge().getTitle())
                 .earnedPoints(DAILY_CHECK_IN_REWARD)
                 .myStatus(GroupCheckInResponse.MyStatusUpdate.builder()
-                        .updatedAchievementRate(uc.getAchievementRate()) // 정수형 달성률
+                        .updatedAchievementRate(uc.getAchievementRate())
                         .currentRank(uc.getCurrentRank())
                         .build())
-                .groupAverageRate(BigDecimal.valueOf(userChallengeRepository.getGroupAverageRate(challengeId)))
+                .groupAverageRate(finalAvgRate)
                 .build();
     }
 
@@ -304,7 +323,7 @@ public class GroupChallengeService {
                             .imageUrl(challenge.getImageUrl())
                             .completedAt(uc.getCompletedAt() != null ? uc.getCompletedAt().format(formatter) : "")
                             .finalSuccessRate(uc.getAchievementRate().intValue())
-                            .acquiredPoints(challenge.getBaseRewardPoints() != null ? challenge.getBaseRewardPoints() : 500) // 챌린지 성공 보상
+                            .acquiredPoints(challenge.getBaseRewardPoints() != null ? challenge.getBaseRewardPoints() : 500)
                             .status("SUCCESS")
                             .build();
                 })
