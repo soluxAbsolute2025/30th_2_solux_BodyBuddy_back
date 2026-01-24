@@ -173,17 +173,32 @@ public class GroupChallengeService {
     @Transactional
     public void joinByGroupCode(String groupCode, Long userId) {
         User user = userRepository.findById(userId).orElseThrow();
+
+        // 1. 그룹 코드 존재 확인
         Challenge challenge = challengeRepository.findByGroupCode(groupCode)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 그룹 코드입니다."));
+
+        // [추가] 모집 중인 상태인지 확인 (기획에 따라 추가 가능)
+        if (challenge.getStatus() != ChallengeStatus.RECRUITING) {
+            throw new IllegalStateException("현재 모집 중인 그룹이 아닙니다.");
+        }
+
+        // 2. 이미 참여 중인지 확인
         userChallengeRepository.findByUserIdAndChallengeId(userId, challenge.getId())
                 .ifPresent(uc -> { throw new IllegalStateException("이미 참여 중인 챌린지입니다."); });
-        if (userChallengeRepository.countByChallengeId(challenge.getId()) >= challenge.getMaxParticipants()) {
+
+        // 3. 인원수 체크 (NPE 방지)
+        long currentCount = userChallengeRepository.countByChallengeId(challenge.getId());
+        if (challenge.getMaxParticipants() != null && currentCount >= challenge.getMaxParticipants()) {
             throw new IllegalStateException("참여 인원이 가득 찼습니다.");
         }
+
+        // 4. 참여 정보 저장
         userChallengeRepository.save(UserChallenge.builder()
                 .user(user).challenge(challenge).currentProgress(BigDecimal.ZERO)
                 .achievementRate(BigDecimal.ZERO).status("IN_PROGRESS")
                 .joinedAt(LocalDateTime.now()).build());
+
         updateRanks(challenge.getId());
     }
 
