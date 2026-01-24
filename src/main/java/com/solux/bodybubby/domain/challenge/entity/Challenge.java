@@ -64,8 +64,8 @@ public class Challenge {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
 
-        // 그룹 챌린지일 경우 고유 코드 8자리 자동 생성
-        if (this.groupCode == null || this.groupCode.isEmpty()) {
+        // [수정] maxParticipants가 있는 '그룹 챌린지'일 때만 고유 코드 생성
+        if (this.maxParticipants != null && (this.groupCode == null || this.groupCode.isEmpty())) {
             this.groupCode = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         }
 

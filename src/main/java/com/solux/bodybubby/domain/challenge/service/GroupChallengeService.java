@@ -9,7 +9,6 @@ import com.solux.bodybubby.domain.user.entity.User;
 import com.solux.bodybubby.domain.user.repository.UserRepository;
 import com.solux.bodybubby.global.util.S3Provider;
 
-import com.solux.bodybubby.s3Test.S3Service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,7 +32,6 @@ public class GroupChallengeService {
     private final UserChallengeRepository userChallengeRepository;
     private final ChallengeLogRepository challengeLogRepository;
     private final S3Provider s3Provider;
-//    private final S3Service s3Service;
     private static final int DAILY_CHECK_IN_REWARD = 10;
 
     /**
@@ -183,22 +181,32 @@ public class GroupChallengeService {
     @Transactional
     public void joinByGroupCode(String groupCode, Long userId) {
         User user = userRepository.findById(userId).orElseThrow();
+
+        // 1. 그룹 코드 존재 확인
         Challenge challenge = challengeRepository.findByGroupCode(groupCode)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 그룹 코드입니다."));
 
-        userChallengeRepository.findByUserIdAndChallengeId(userId, challenge.getId())
-                .ifPresent(uc -> {
-                    throw new IllegalStateException("이미 참여 중인 챌린지입니다.");
-                });
+        // [추가] 모집 중인 상태인지 확인 (기획에 따라 추가 가능)
+        if (challenge.getStatus() != ChallengeStatus.RECRUITING) {
+            throw new IllegalStateException("현재 모집 중인 그룹이 아닙니다.");
+        }
 
-        if (userChallengeRepository.countByChallengeId(challenge.getId()) >= challenge.getMaxParticipants()) {
+        // 2. 이미 참여 중인지 확인
+        userChallengeRepository.findByUserIdAndChallengeId(userId, challenge.getId())
+                .ifPresent(uc -> { throw new IllegalStateException("이미 참여 중인 챌린지입니다."); });
+
+        // 3. 인원수 체크 (NPE 방지)
+        long currentCount = userChallengeRepository.countByChallengeId(challenge.getId());
+        if (challenge.getMaxParticipants() != null && currentCount >= challenge.getMaxParticipants()) {
             throw new IllegalStateException("참여 인원이 가득 찼습니다.");
         }
 
-        UserChallenge newParticipant = userChallengeRepository.save(UserChallenge.builder()
+        // 4. 참여 정보 저장
+        userChallengeRepository.save(UserChallenge.builder()
                 .user(user).challenge(challenge).currentProgress(BigDecimal.ZERO)
                 .achievementRate(BigDecimal.ZERO).status("IN_PROGRESS")
                 .joinedAt(LocalDateTime.now()).build());
+
         updateRanks(challenge.getId());
     }
 
@@ -238,54 +246,48 @@ public class GroupChallengeService {
     }
 
     /**
-     * 그룹 챌린지 인증 (S3 업로드 및 로그 저장)
+     * 그룹 챌린지 인증
      */
     @Transactional
-    public GroupCheckInResponse checkIn(Long challengeId, Long userId, MultipartFile file) {
+    public GroupCheckInResponse checkIn(Long challengeId, Long userId) {
         UserChallenge uc = userChallengeRepository.findByUserIdAndChallengeId(userId, challengeId)
                 .orElseThrow(() -> new IllegalArgumentException("참여 정보를 찾을 수 없습니다."));
 
-        // 1. 중복 인증 체크
+        // 1. 하루 1회 중복 인증 체크
         if (challengeLogRepository.existsByUserChallengeAndLogDate(uc, LocalDate.now())) {
             throw new IllegalStateException("오늘은 이미 인증을 완료했습니다.");
         }
 
-        // 2. 이미지 S3 업로드 (변수 선언 추가)
-        String uploadedImageUrl = null;
-        if (file != null && !file.isEmpty()) {
-            uploadedImageUrl = s3Provider.uploadFile(file, "challenge-auth");
-        }
-
-        // 3. 유저 포인트 지급
+        // 2. 유저 포인트 지급 (매일 10 XP)
         User user = uc.getUser();
         user.addPoints(DAILY_CHECK_IN_REWARD);
 
-        // 4. 인증 로그 기록 (imageUrl에 업로드된 경로 저장)
+        // 3. 인증 로그 기록 (사진 없이 기록만 남김)
         challengeLogRepository.save(ChallengeLog.builder()
                 .userChallenge(uc)
                 .logDate(LocalDate.now())
                 .valueAchieved(BigDecimal.ONE)
-                .imageUrl(uploadedImageUrl) // 👈 여기서 변수 사용
                 .build());
 
-        // 5. 진행률 업데이트 (UserChallenge 엔티티 내부 로직 실행)
-        uc.updateGroupProgress();
+        // 4. 진행률 및 달성률 업데이트
+        uc.updateCheckInProgress(); // 통합된 인증 로직 사용
 
-        // 6. 100% 달성 보너스 (Null 방어 추가)
+        // 5. 최종 완수 보너스 포인트 지급
         if ("COMPLETED".equals(uc.getStatus())) {
             Integer bonus = uc.getChallenge().getBaseRewardPoints();
             user.addPoints(bonus != null ? bonus : 500);
         }
 
-        // 7. 실시간 순위 업데이트
+        // 6. 실시간 순위 일괄 업데이트
         updateRanks(challengeId);
 
-        // 8. 평균 달성률 조회 및 응답 (Null 방어)
+        // 7. 그룹 평균 달성률 계산
         Double avgRate = userChallengeRepository.getGroupAverageRate(challengeId);
         BigDecimal finalAvgRate = BigDecimal.valueOf(avgRate != null ? avgRate : 0.0);
 
         return GroupCheckInResponse.builder()
                 .challengeId(challengeId)
+                .nickname(user.getNickname())
                 .title(uc.getChallenge().getTitle())
                 .earnedPoints(DAILY_CHECK_IN_REWARD)
                 .myStatus(GroupCheckInResponse.MyStatusUpdate.builder()
@@ -293,6 +295,7 @@ public class GroupChallengeService {
                         .currentRank(uc.getCurrentRank())
                         .build())
                 .groupAverageRate(finalAvgRate)
+                .checkInTime(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"))) // [보완] 인증 시각 추가
                 .build();
     }
 
@@ -300,8 +303,7 @@ public class GroupChallengeService {
      * 완료된 그룹 챌린지 목록 조회
      * 조건: 그룹 전체 평균 달성률(groupAverageRate)이 100%인 경우
      */
-    public List<GroupCompletedResponse> getCompletedList(Long userId) {
-        // 1. 유저가 참여했던 모든 챌린지 정보 조회 (상태 상관없이 일단 조회)
+     public List<GroupCompletedResponse> getCompletedList(Long userId) {
         List<UserChallenge> myAllChallenges = userChallengeRepository.findAllByUserId(userId);
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd");
