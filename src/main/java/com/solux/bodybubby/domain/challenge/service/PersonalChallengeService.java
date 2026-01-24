@@ -58,6 +58,7 @@ public class PersonalChallengeService {
                     return PersonalListResponse.OngoingPersonalChallenge.builder()
                             .challengeId(c.getId())
                             .title(c.getTitle())
+                            .description(c.getDescription())
                             .imageUrl(c.getImageUrl())
                             .category(c.getChallengeType())
                             .progressValue(uc.getCurrentProgress().intValue())
