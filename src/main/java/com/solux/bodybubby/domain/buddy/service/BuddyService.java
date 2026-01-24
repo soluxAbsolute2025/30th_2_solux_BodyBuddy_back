@@ -51,14 +51,15 @@ public class BuddyService {
                 .map(buddy -> {
                     var friend = buddy.getSender().getId().equals(userId) ? buddy.getReceiver() : buddy.getSender();
                     boolean hasPokedToday = pokedIds.contains(friend.getId());
+                    String lastActivityTime = calculateLastActivity(friend.getUpdatedAt());
 
                     return new BuddyListResponse.BuddyInfo(
                             friend.getId(),
                             friend.getNickname(),
                             friend.getLevel(),
                             friend.getProfileImageUrl(),
-                            "10분 전",
-                            hasPokedToday // 추후 수정 예정
+                            lastActivityTime,
+                            hasPokedToday
                     );
                 }).collect(Collectors.toList());
     }
@@ -66,14 +67,18 @@ public class BuddyService {
     // 대기 중인 요청 목록 조회 및 변환
     private List<BuddyListResponse.BuddyRequestInfo> fetchPendingRequests(Long userId) {
         return buddyRepository.findAllPendingRequests(userId).stream()
-                .map(buddy -> new BuddyListResponse.BuddyRequestInfo(
-                        buddy.getId(),
-                        buddy.getSender().getId(),
-                        buddy.getSender().getNickname(),
-                        buddy.getSender().getProfileImageUrl(),
-                        buddy.getSender().getLevel(),
-                        "방금 전" // 추후 수정 예정
-                )).collect(Collectors.toList());
+                .map(buddy -> {
+                    String lastActivityTime = calculateLastActivity(buddy.getSender().getUpdatedAt());
+
+                    return new BuddyListResponse.BuddyRequestInfo(
+                            buddy.getId(),
+                            buddy.getSender().getId(),
+                            buddy.getSender().getNickname(),
+                            buddy.getSender().getProfileImageUrl(),
+                            buddy.getSender().getLevel(),
+                            lastActivityTime
+                    );
+                }).collect(Collectors.toList());
     }
 
     // 버디 아이디(loginId)로 검색

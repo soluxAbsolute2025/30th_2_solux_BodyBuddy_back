@@ -25,11 +25,12 @@ public class PersonalListResponse {
     public static class OngoingPersonalChallenge {
         private Long challengeId;
         private String title;
+        private String description;
         private String imageUrl;
         private String category;      // DAILY(초록), WEEKLY(파랑)
         private Integer progressValue;
         private Integer totalValue;
-        private Integer expectedReward;
+        private Integer estimatedReward;
         private Integer dday;
         private String colorCode;
     }

@@ -27,7 +27,6 @@ import java.util.stream.IntStream;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class GroupChallengeService {
-    
     private final UserRepository userRepository;
     private final ChallengeRepository challengeRepository;
     private final UserChallengeRepository userChallengeRepository;
@@ -39,17 +38,19 @@ public class GroupChallengeService {
      * 참여 중 그룹 챌린지 목록 조회
      */
     public List<GroupListResponse> getOngoingList(Long userId) {
-        // 기존 코드 유지 (생략)
         List<UserChallenge> userChallenges = userChallengeRepository.findAllByUserIdAndStatus(userId, "IN_PROGRESS");
+
         return userChallenges.stream().map(uc -> {
-             Challenge challenge = uc.getChallenge();
-             List<GroupListResponse.ParticipantProfile> topProfiles =
+            Challenge challenge = uc.getChallenge();
+            List<GroupListResponse.ParticipantProfile> topProfiles =
                     userChallengeRepository.findAllByChallengeIdOrderByAchievementRateDescJoinedAtAsc(challenge.getId())
                             .stream().limit(3)
                             .map(p -> GroupListResponse.ParticipantProfile.builder()
                                     .profileImageUrl(p.getUser().getProfileImageUrl()).build())
                             .collect(Collectors.toList());
+
             long remainingDays = ChronoUnit.DAYS.between(LocalDate.now(), challenge.getEndDate());
+
             return GroupListResponse.builder()
                     .challengeId(challenge.getId())
                     .title(challenge.getTitle())
@@ -67,10 +68,14 @@ public class GroupChallengeService {
     public GroupDetailResponse getDetail(Long challengeId, Long userId) {
         UserChallenge myUc = userChallengeRepository.findByUserIdAndChallengeId(userId, challengeId)
                 .orElseThrow(() -> new IllegalArgumentException("참여 중인 챌린지가 아닙니다."));
+
         Challenge challenge = myUc.getChallenge();
         List<UserChallenge> rankings = userChallengeRepository.findAllByChallengeIdOrderByAchievementRateDescJoinedAtAsc(challenge.getId());
+
+        // [보완] 평균 달성률이 null일 경우(참여자가 없을 때 등) 0.0으로 처리하여 에러 방지
         Double avgRate = userChallengeRepository.getGroupAverageRate(challengeId);
-        
+        BigDecimal groupAverage = BigDecimal.valueOf(avgRate != null ? avgRate : 0.0);
+
         List<GroupDetailResponse.ParticipantDetail> participantDetails = IntStream.range(0, rankings.size())
                 .mapToObj(i -> {
                     UserChallenge uc = rankings.get(i);
@@ -126,6 +131,7 @@ public class GroupChallengeService {
         User creator = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
+        // 기간은 최소 7일 이상
         if (request.getPeriod() == null || request.getPeriod() < 7) {
             throw new IllegalArgumentException("챌린지 기간은 최소 7일 이상으로 설정해야 합니다.");
         }
@@ -154,11 +160,13 @@ public class GroupChallengeService {
 
         Challenge savedChallenge = challengeRepository.save(challenge);
 
+        // 방장 자동 참여 등록
         userChallengeRepository.save(UserChallenge.builder()
                 .user(creator).challenge(savedChallenge).currentProgress(BigDecimal.ZERO)
                 .achievementRate(BigDecimal.ZERO).status("IN_PROGRESS")
                 .joinedAt(LocalDateTime.now()).build());
 
+        // 성공 화면을 위한 그룹 코드 반환
         return GroupCreateResponse.builder()
                 .status(201)
                 .groupId(savedChallenge.getId())
@@ -206,7 +214,10 @@ public class GroupChallengeService {
      * 해당 그룹의 모든 참가자 순위 일괄 업데이트
      */
     private void updateRanks(Long challengeId) {
+        // 달성률 내림차순 + 참여시간 오름차순으로 전체 참가자 조회
         List<UserChallenge> userChallenges = userChallengeRepository.findAllByChallengeIdOrderByAchievementRateDescJoinedAtAsc(challengeId);
+
+        // 순서대로 순위(1위부터) 부여
         for (int i = 0; i < userChallenges.size(); i++) {
             userChallenges.get(i).updateRank(i + 1);
         }
@@ -299,7 +310,9 @@ public class GroupChallengeService {
 
         return myAllChallenges.stream()
                 .filter(uc -> {
+                    // 2. 해당 챌린지의 그룹 평균 달성률 계산
                     Double avgRate = userChallengeRepository.getGroupAverageRate(uc.getChallenge().getId());
+                    // 3. 평균이 100%인 것만 필터링 (정수 변환 후 비교)
                     return avgRate != null && avgRate.intValue() == 100;
                 })
                 .map(uc -> {

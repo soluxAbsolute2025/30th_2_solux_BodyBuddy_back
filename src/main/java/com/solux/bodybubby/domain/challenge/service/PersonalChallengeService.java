@@ -58,11 +58,12 @@ public class PersonalChallengeService {
                     return PersonalListResponse.OngoingPersonalChallenge.builder()
                             .challengeId(c.getId())
                             .title(c.getTitle())
+                            .description(c.getDescription())
                             .imageUrl(c.getImageUrl())
                             .category(c.getChallengeType())
                             .progressValue(uc.getCurrentProgress().intValue())
                             .totalValue(c.getPeriod())
-                            .expectedReward(c.getBaseRewardPoints() != null ? c.getBaseRewardPoints() : 0) // 엔티티 값 사용
+                            .estimatedReward(c.getBaseRewardPoints() != null ? c.getBaseRewardPoints() : 0) // 엔티티 값 사용
                             .dday((int) dday)
                             .colorCode(getColorByCategory(c.getChallengeType())) // 카테고리별 색상 로직 적용
                             .build();
@@ -97,7 +98,7 @@ public class PersonalChallengeService {
                 .targetDays(c.getPeriod())
                 .dailyGoal(c.getTargetValue().intValue())
                 .unit(c.getTargetUnit())
-                .expectedReward(c.getBaseRewardPoints())
+                .estimatedReward(c.getBaseRewardPoints())
                 .rewardRate(c.getBaseRewardPoints() != null && totalTargetDays > 0 ? c.getBaseRewardPoints() / (int) totalTargetDays : 0) // 일일 기여 포인트(예시)
                 .myAchievementRate(uc.getAchievementRate().intValue())
                 .build();
@@ -122,7 +123,7 @@ public class PersonalChallengeService {
                 .targetValue(request.getDailyGoal())
                 .targetUnit(request.getUnit())
                 .period(request.getTargetDays())
-                .baseRewardPoints(request.getExpectedReward())
+                .baseRewardPoints(request.getEstimatedReward())
                 .startDate(LocalDate.now())
                 .endDate(LocalDate.now().plusDays(request.getTargetDays()))
                 .visibility(request.getVisibility() != null ? request.getVisibility() : Visibility.PUBLIC)
