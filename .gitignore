@@ -15,3 +15,5 @@ build/
 
 # 로컬 개발용
 .env.local
+
+secret.properties
